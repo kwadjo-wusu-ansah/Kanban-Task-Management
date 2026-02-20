@@ -10,7 +10,6 @@ export interface TasksItem {
 
 export interface TasksProps extends HTMLAttributes<HTMLElement> {
   accentColor?: string
-  emptyMessage?: string
   heading: string
   mode?: TaskCardMode
   onTaskSelect?: (taskId: string) => void

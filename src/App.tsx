@@ -13,7 +13,6 @@ const previewTasks: TasksItem[] = [
 // Renders a focused preview page for the reusable Tasks component.
 function App() {
   const [taskCardMode, setTaskCardMode] = useState<TaskCardMode>('light')
-  const [isEmptyPreview, setIsEmptyPreview] = useState(false)
 
   return (
     <main className={styles.page}>
@@ -24,20 +23,10 @@ function App() {
         <Button onClick={() => setTaskCardMode('dark')} size="small" variant={taskCardMode === 'dark' ? 'primary' : 'secondary'}>
           Dark Tasks
         </Button>
-        <Button onClick={() => setIsEmptyPreview((previousValue) => !previousValue)} size="small" variant={isEmptyPreview ? 'primary' : 'secondary'}>
-          {isEmptyPreview ? 'Show Task List' : 'Show Empty State'}
-        </Button>
       </header>
 
       <section className={classNames(styles.canvas, taskCardMode === 'dark' ? styles.canvasDark : styles.canvasLight)}>
-        <Tasks
-          accentColor="#49C4E5"
-          emptyMessage="No tasks"
-          heading="Todo"
-          mode={taskCardMode}
-          taskCount={isEmptyPreview ? 0 : previewTasks.length}
-          tasks={isEmptyPreview ? [] : previewTasks}
-        />
+        <Tasks accentColor="#49C4E5" heading="Todo" mode={taskCardMode} tasks={previewTasks} />
       </section>
     </main>
   )

@@ -59,7 +59,7 @@ This version is aligned to Figma board screens and the project local `data.json`
 
 ### Board Rendering
 - `BoardColumn`: column header (dot + uppercase title/count) and task stack.
-- `Tasks`: mode-aware task list that maps task data to `TaskCard` and supports empty state UI.
+- `Tasks`: mode-aware task list that maps task data to `TaskCard` under a column heading.
 - `TaskCard`: title + subtask progress summary.
 - `AddColumnCard`: gradient lane CTA.
 - `EmptyBoardState`: centered no-column fallback.

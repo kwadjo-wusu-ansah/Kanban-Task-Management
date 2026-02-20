@@ -37,33 +37,3 @@
 .taskRow {
   inline-size: 280px;
 }
-
-.emptyState {
-  align-items: center;
-  border: 1px dashed transparent;
-  border-radius: var(--radius-8);
-  display: flex;
-  inline-size: 280px;
-  justify-content: center;
-  min-block-size: 120px;
-  padding: var(--space-4);
-}
-
-.emptyStateLight {
-  background: rgba(244, 247, 253, 0.35);
-  border-color: var(--color-lines-light);
-}
-
-.emptyStateDark {
-  background: rgba(32, 33, 44, 0.4);
-  border-color: var(--color-lines-dark);
-}
-
-.emptyMessage {
-  color: var(--color-medium-grey);
-  font-size: var(--text-body-m-size);
-  font-weight: 700;
-  line-height: var(--line-height-compact);
-  margin: 0;
-  text-align: center;
-}

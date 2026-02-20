@@ -12,11 +12,10 @@ function formatHeadingLabel(heading: string, taskCount: number): string {
   return `${safeHeading.toUpperCase()} (${safeTaskCount})`
 }
 
-// Renders a reusable task stack using TaskCard items with a mode-aware empty state.
+// Renders a reusable task stack using TaskCard items under a column-style heading.
 function Tasks({
   accentColor = 'var(--color-primary)',
   className,
-  emptyMessage = 'No tasks',
   heading,
   mode = 'light',
   onTaskSelect,
@@ -24,7 +23,6 @@ function Tasks({
   tasks,
   ...props
 }: TasksProps) {
-  const hasTasks = tasks.length > 0
   const resolvedTaskCount = typeof taskCount === 'number' ? taskCount : tasks.length
 
   return (
@@ -33,26 +31,19 @@ function Tasks({
         <span aria-hidden="true" className={styles.headingDot} style={{ backgroundColor: accentColor }} />
         <h2 className={styles.headingText}>{formatHeadingLabel(heading, resolvedTaskCount)}</h2>
       </header>
-
-      {hasTasks ? (
-        <ul className={styles.tasksList}>
-          {tasks.map((task) => (
-            <li className={styles.taskRow} key={task.id}>
-              <TaskCard
-                completedSubtaskCount={task.completedSubtaskCount}
-                mode={mode}
-                onClick={onTaskSelect ? () => onTaskSelect(task.id) : undefined}
-                title={task.title}
-                totalSubtaskCount={task.totalSubtaskCount}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className={classNames(styles.emptyState, mode === 'dark' ? styles.emptyStateDark : styles.emptyStateLight)} role="status">
-          <p className={styles.emptyMessage}>{emptyMessage}</p>
-        </div>
-      )}
+      <ul className={styles.tasksList}>
+        {tasks.map((task) => (
+          <li className={styles.taskRow} key={task.id}>
+            <TaskCard
+              completedSubtaskCount={task.completedSubtaskCount}
+              mode={mode}
+              onClick={onTaskSelect ? () => onTaskSelect(task.id) : undefined}
+              title={task.title}
+              totalSubtaskCount={task.totalSubtaskCount}
+            />
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
