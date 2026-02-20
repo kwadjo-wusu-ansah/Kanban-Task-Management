@@ -139,6 +139,11 @@ function buildDeleteBoardDescription(boardName: string): string {
   return `Are you sure you want to delete the '${boardName}' board? This action will remove all columns and tasks and cannot be reversed.`
 }
 
+// Builds delete-task confirmation copy that includes the target task name.
+function buildDeleteTaskDescription(taskName: string): string {
+  return `Are you sure you want to delete the '${taskName}' task and its subtasks? This action cannot be reversed.`
+}
+
 const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
 // Renders the desktop board app shell in populated and empty states for both themes.
@@ -188,6 +193,11 @@ function App() {
   const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null)
   const [deletingBoardName, setDeletingBoardName] = useState('')
 
+  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false)
+  const [deletingTaskBoardId, setDeletingTaskBoardId] = useState<string | null>(null)
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
+  const [deletingTaskName, setDeletingTaskName] = useState('')
+
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
   const activeTask = getActiveTask(activeBoard, activeTaskId)
   const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
@@ -195,6 +205,7 @@ function App() {
   const boardCount = boards.length
   const statusOptions = buildStatusOptions(activeBoard)
   const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
+  const deleteTaskDescription = buildDeleteTaskDescription(deletingTaskName || activeTask?.title || '')
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
@@ -228,6 +239,14 @@ function App() {
     setDeletingBoardName('')
   }
 
+  // Resets local Delete Task modal state.
+  function resetDeleteTaskState() {
+    setIsDeleteTaskModalOpen(false)
+    setDeletingTaskBoardId(null)
+    setDeletingTaskId(null)
+    setDeletingTaskName('')
+  }
+
   // Handles sidebar board changes and closes all open task modals and menus.
   function handleBoardSelect(nextBoardId: string) {
     const nextBoard = getActiveBoard(boardsData, nextBoardId)
@@ -255,6 +274,7 @@ function App() {
     resetEditBoardForm()
 
     resetDeleteBoardState()
+    resetDeleteTaskState()
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -281,6 +301,7 @@ function App() {
     resetEditBoardForm()
 
     resetDeleteBoardState()
+    resetDeleteTaskState()
 
     setActiveTaskId(nextTask.id)
     setIsTaskMenuOpen(false)
@@ -312,6 +333,7 @@ function App() {
     resetEditBoardForm()
 
     resetDeleteBoardState()
+    resetDeleteTaskState()
 
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
@@ -336,6 +358,7 @@ function App() {
     resetEditBoardForm()
 
     resetDeleteBoardState()
+    resetDeleteTaskState()
 
     setIsAddBoardModalOpen(true)
     resetAddBoardForm()
@@ -385,6 +408,7 @@ function App() {
     setIsBoardMenuOpen(false)
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
+    resetDeleteTaskState()
     setIsDeleteBoardModalOpen(true)
     setDeletingBoardId(activeBoard.id)
     setDeletingBoardName(activeBoard.name)
@@ -412,6 +436,7 @@ function App() {
 
     setIsBoardMenuOpen(false)
     resetDeleteBoardState()
+    resetDeleteTaskState()
 
     setEditingBoardId(activeBoard.id)
     setEditBoardName(activeBoard.name)
@@ -446,6 +471,7 @@ function App() {
     resetEditBoardForm()
     setIsBoardMenuOpen(false)
     resetDeleteBoardState()
+    resetDeleteTaskState()
   }
 
   // Closes the Edit Board modal and clears its local form state.
@@ -495,6 +521,7 @@ function App() {
 
     setIsBoardMenuOpen(false)
     resetDeleteBoardState()
+    resetDeleteTaskState()
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
@@ -503,9 +530,62 @@ function App() {
     resetEditBoardForm()
   }
 
-  // Handles unimplemented Delete Task menu action by closing the menu.
+  // Opens the Delete Task modal from the view-task action menu.
   function handleTaskDeleteAction() {
+    if (!activeTask || !activeBoard) {
+      setIsTaskMenuOpen(false)
+      return
+    }
+
     setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+    setActiveTaskId(null)
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+    setIsBoardMenuOpen(false)
+    resetDeleteBoardState()
+
+    setDeletingTaskBoardId(activeBoard.id)
+    setDeletingTaskId(activeTask.id)
+    setDeletingTaskName(activeTask.title)
+    setIsDeleteTaskModalOpen(true)
+  }
+
+  // Closes the Delete Task modal.
+  function handleDeleteTaskModalClose() {
+    resetDeleteTaskState()
+  }
+
+  // Deletes the selected task locally from the active board context.
+  function handleDeleteTaskConfirm() {
+    if (!deletingTaskId || !deletingTaskBoardId) {
+      return
+    }
+
+    setBoardsData((previousBoards) =>
+      previousBoards.map((board) => {
+        if (board.id !== deletingTaskBoardId) {
+          return board
+        }
+
+        return {
+          ...board,
+          columns: board.columns.map((column) => ({
+            ...column,
+            tasks: column.tasks.filter((task) => task.id !== deletingTaskId),
+          })),
+        }
+      }),
+    )
+
+    setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+    resetDeleteTaskState()
   }
 
   // Closes the Edit Task modal and edit-status dropdown.
@@ -1036,6 +1116,19 @@ function App() {
           secondaryActionLabel="Cancel"
           title="Delete this board?"
           variant="deleteBoard"
+        />
+      ) : null}
+
+      {isDeleteTaskModalOpen ? (
+        <Modal
+          description={deleteTaskDescription}
+          mode={mode}
+          onClose={handleDeleteTaskModalClose}
+          onPrimaryAction={handleDeleteTaskConfirm}
+          onSecondaryAction={handleDeleteTaskModalClose}
+          secondaryActionLabel="Cancel"
+          title="Delete this task?"
+          variant="deleteTask"
         />
       ) : null}
     </main>
