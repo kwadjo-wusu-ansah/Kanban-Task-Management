@@ -41,7 +41,8 @@
   background: var(--color-light-grey);
 }
 
-.checkboxControl:not(.checkboxActive):hover {
+.checkboxControl:not(.checkboxActive):hover,
+.checkboxControl:not(.checkboxActive):active {
   background: rgba(99, 95, 199, 0.25);
 }
 
