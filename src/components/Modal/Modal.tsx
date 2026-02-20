@@ -288,20 +288,21 @@ function Modal({
                   <div className={styles.editableRow} key={subtask.id}>
                     <Input
                       className={styles.editableInput}
+                      errorMessage={subtask.errorMessage}
                       mode={mode}
                       onTextChange={(event) => onSubtaskValueChange?.(subtask.id, event.target.value)}
                       placeholder={subtask.placeholder}
-                      state="idle"
+                      state={subtask.errorMessage ? 'error' : 'idle'}
                       value={subtask.value}
                       variant="textField"
                     />
                     <button
                       aria-label="Remove subtask"
-                      className={styles.removeButton}
+                      className={classNames(styles.removeButton, subtask.errorMessage && styles.removeButtonError)}
                       onClick={() => onSubtaskRemove?.(subtask.id)}
                       type="button"
                     >
-                      <img alt="" aria-hidden="true" className={styles.removeIcon} src={iconCross} />
+                      <img alt="" aria-hidden="true" className={classNames(styles.removeIcon, subtask.errorMessage && styles.removeIconError)} src={iconCross} />
                     </button>
                   </div>
                 ))}

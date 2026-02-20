@@ -267,9 +267,17 @@
   outline-offset: 2px;
 }
 
+.removeButtonError {
+  color: var(--color-red);
+}
+
 .removeIcon {
   block-size: 15px;
   inline-size: 15px;
+}
+
+.removeIconError {
+  filter: brightness(0) saturate(100%) invert(59%) sepia(80%) saturate(1948%) hue-rotate(322deg) brightness(95%) contrast(95%);
 }
 
 .fullWidthButton {

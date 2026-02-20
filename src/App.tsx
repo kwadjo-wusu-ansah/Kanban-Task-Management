@@ -608,7 +608,7 @@ function App() {
   // Updates one subtask row value in the Add Task form.
   function handleAddTaskSubtaskValueChange(subtaskId: string, nextValue: string) {
     setAddTaskSubtasks((previousSubtasks) =>
-      previousSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, value: nextValue } : subtask)),
+      previousSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, errorMessage: undefined, value: nextValue } : subtask)),
     )
   }
 
@@ -626,11 +626,18 @@ function App() {
 
     const normalizedTitle = addTaskTitle.trim()
     const normalizedStatus = addTaskStatusValue.trim()
-    const normalizedSubtasks = addTaskSubtasks
-      .map((subtask) => subtask.value.trim())
-      .filter((subtaskTitle) => subtaskTitle.length > 0)
+    const normalizedSubtasks = addTaskSubtasks.map((subtask) => ({
+      id: subtask.id,
+      title: subtask.value.trim(),
+    }))
+    const nextSubtasksWithErrors = addTaskSubtasks.map((subtask) => ({
+      ...subtask,
+      errorMessage: subtask.value.trim().length === 0 ? "Can't be empty" : undefined,
+    }))
+    const hasSubtaskError = nextSubtasksWithErrors.some((subtask) => Boolean(subtask.errorMessage))
 
-    if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || normalizedSubtasks.length === 0) {
+    if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || hasSubtaskError || normalizedSubtasks.length === 0) {
+      setAddTaskSubtasks(nextSubtasksWithErrors)
       return
     }
 
@@ -646,10 +653,10 @@ function App() {
       description: addTaskDescription.trim(),
       id: nextTaskId,
       status: targetColumn.name,
-      subtasks: normalizedSubtasks.map((subtaskTitle, subtaskIndex) => ({
-        id: `${nextTaskId}-subtask-${subtaskIndex}`,
+      subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
+        id: subtask.id || `${nextTaskId}-subtask-${subtaskIndex}`,
         isCompleted: false,
-        title: subtaskTitle,
+        title: subtask.title,
       })),
       title: normalizedTitle,
       totalSubtaskCount: normalizedSubtasks.length,

@@ -6,6 +6,7 @@ export type ModalVariant = 'viewTask' | 'addTask' | 'editTask' | 'addBoard' | 'e
 
 export interface ModalItem {
   checked?: boolean
+  errorMessage?: string
   id: string
   placeholder?: string
   value: string
@@ -42,6 +43,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   open?: boolean
   primaryActionLabel?: string
   secondaryActionLabel?: string
+  subtaskErrorMessage?: string
   statusLabel?: string
   statusOptions?: DropdownOption[]
   statusValue?: string

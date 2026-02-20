@@ -163,6 +163,7 @@
   color: rgba(0, 1, 18, 0.25);
 }
 
+.textFieldControl:focus,
 .textFieldControl:focus-visible {
   border-color: var(--color-primary);
 }
@@ -172,7 +173,7 @@
 }
 
 .textFieldActive {
-  border-color: rgba(130, 143, 163, 0.25);
+  border-color: var(--color-primary);
 }
 
 .textFieldError {
