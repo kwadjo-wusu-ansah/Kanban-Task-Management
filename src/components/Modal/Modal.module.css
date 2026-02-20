@@ -27,6 +27,10 @@
   padding: var(--space-8);
 }
 
+.panelViewTask {
+  overflow: visible;
+}
+
 .panelLight {
   background: var(--color-white);
   color: var(--color-black);

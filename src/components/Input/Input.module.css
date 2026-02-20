@@ -199,6 +199,10 @@
   position: relative;
 }
 
+.dropdownWrapOpen {
+  z-index: 2;
+}
+
 .dropdownControl {
   align-items: center;
   border: 1px solid rgba(130, 143, 163, 0.25);
@@ -247,12 +251,13 @@
   box-shadow: var(--shadow-menu);
   display: grid;
   gap: var(--space-2);
+  inset-block-start: calc(100% + var(--space-2));
   inset-inline-start: 0;
+  inset-inline-end: 0;
   list-style: none;
-  margin: var(--space-2) 0 0;
+  margin: 0;
   padding: var(--space-4);
   position: absolute;
-  inset-inline-end: 0;
   z-index: 1;
 }
 

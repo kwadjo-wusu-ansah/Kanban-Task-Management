@@ -157,6 +157,7 @@ function Modal({
         className={classNames(
           styles.panel,
           mode === 'dark' ? styles.panelDark : styles.panelLight,
+          isViewTaskVariant && styles.panelViewTask,
           isDeleteVariant && styles.panelDelete,
           className,
         )}

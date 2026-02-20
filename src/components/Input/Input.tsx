@@ -103,7 +103,7 @@ function renderDropdownInput({
   return (
     <div className={classNames(styles.root, getModeClassName(mode, styles), styles.fieldGroup, className)}>
       {dropdownLabel ? <span className={styles.fieldLabel}>{dropdownLabel}</span> : null}
-      <div className={styles.dropdownWrap}>
+      <div className={classNames(styles.dropdownWrap, isMenuOpen && styles.dropdownWrapOpen)}>
         <button
           aria-expanded={isMenuOpen}
           aria-haspopup="listbox"
