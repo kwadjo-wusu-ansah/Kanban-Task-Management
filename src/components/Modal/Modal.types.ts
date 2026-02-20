@@ -17,11 +17,14 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   description?: string
   isPrimaryActionDisabled?: boolean
   isStatusMenuOpen?: boolean
+  isTaskMenuOpen?: boolean
   mode?: ModalMode
   onAddColumn?: () => void
   onAddSubtask?: () => void
   onClose?: () => void
   onColumnRemove?: (columnId: string) => void
+  onDeleteTask?: () => void
+  onEditTask?: () => void
   onMenuOpen?: () => void
   onPrimaryAction?: () => void
   onSecondaryAction?: () => void

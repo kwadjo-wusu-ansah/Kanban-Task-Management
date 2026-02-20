@@ -31,9 +31,18 @@ function createEmptySubtaskItem(placeholder = 'e.g. New subtask'): ModalItem {
   }
 }
 
-// Builds the default Add Task subtask rows shown when the modal opens.
+// Builds default Add Task subtask rows shown when the modal opens.
 function createInitialAddTaskSubtasks(): ModalItem[] {
   return DEFAULT_ADD_SUBTASK_PLACEHOLDERS.map((placeholder) => createEmptySubtaskItem(placeholder))
+}
+
+// Maps task subtasks into editable modal rows while preserving completion state.
+function mapTaskSubtasksToEditableItems(task: BoardTaskPreview): ModalItem[] {
+  return task.subtasks.map((subtask) => ({
+    checked: subtask.isCompleted,
+    id: subtask.id,
+    value: subtask.title,
+  }))
 }
 
 // Builds fallback board previews so the app shell still renders when data is unavailable.
@@ -83,8 +92,8 @@ function buildStatusOptions(board: BoardPreview | undefined): DropdownOption[] {
   }))
 }
 
-// Maps task subtasks into the modal checkbox item format.
-function mapTaskSubtasksToModalItems(task: BoardTaskPreview): ModalItem[] {
+// Maps task subtasks into the view-task modal checkbox item format.
+function mapTaskSubtasksToViewModalItems(task: BoardTaskPreview): ModalItem[] {
   return task.subtasks.map((subtask) => ({
     checked: subtask.isCompleted,
     id: subtask.id,
@@ -103,6 +112,7 @@ function App() {
   const [activeBoardId, setActiveBoardId] = useState(boards[0]?.id ?? fallbackBoards[0].id)
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [isViewStatusMenuOpen, setIsViewStatusMenuOpen] = useState(false)
   const [viewStatusValue, setViewStatusValue] = useState('')
   const [viewSubtasks, setViewSubtasks] = useState<ModalItem[]>([])
@@ -113,6 +123,14 @@ function App() {
   const [addTaskDescription, setAddTaskDescription] = useState('')
   const [addTaskStatusValue, setAddTaskStatusValue] = useState('')
   const [addTaskSubtasks, setAddTaskSubtasks] = useState<ModalItem[]>(createInitialAddTaskSubtasks)
+
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [isEditStatusMenuOpen, setIsEditStatusMenuOpen] = useState(false)
+  const [editTaskTitle, setEditTaskTitle] = useState('')
+  const [editTaskDescription, setEditTaskDescription] = useState('')
+  const [editTaskStatusValue, setEditTaskStatusValue] = useState('')
+  const [editTaskSubtasks, setEditTaskSubtasks] = useState<ModalItem[]>([])
 
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
   const activeTask = getActiveTask(activeBoard, activeTaskId)
@@ -130,17 +148,23 @@ function App() {
     setIsAddStatusMenuOpen(false)
   }
 
-  // Handles sidebar board changes and closes any open task modal.
+  // Handles sidebar board changes and closes all open task modals and menus.
   function handleBoardSelect(nextBoardId: string) {
     const nextBoard = getActiveBoard(boardsData, nextBoardId)
     const nextStatusOptions = buildStatusOptions(nextBoard)
 
     setActiveBoardId(nextBoardId)
     setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
+
     setIsAddTaskModalOpen(false)
     setIsAddStatusMenuOpen(false)
     setAddTaskStatusValue(nextStatusOptions[0]?.value ?? '')
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -153,27 +177,40 @@ function App() {
 
     setIsAddTaskModalOpen(false)
     setIsAddStatusMenuOpen(false)
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+
     setActiveTaskId(nextTask.id)
+    setIsTaskMenuOpen(false)
     setViewStatusValue(nextTask.status)
-    setViewSubtasks(mapTaskSubtasksToModalItems(nextTask))
+    setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
     setIsViewStatusMenuOpen(false)
   }
 
-  // Opens Add Task modal with a clean form and closes View Task modal if open.
+  // Opens Add Task modal with a clean form and closes other task overlays.
   function handleAddTaskOpen() {
     if (!hasColumns) {
       return
     }
 
     setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
   }
 
-  // Closes the view-task modal and resets dropdown open state.
+  // Closes the view-task modal and related menu/dropdown state.
   function handleViewTaskModalClose() {
     setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
   }
 
@@ -194,6 +231,45 @@ function App() {
   function handleViewTaskStatusSelect(nextStatusValue: string) {
     setViewStatusValue(nextStatusValue)
     setIsViewStatusMenuOpen(false)
+  }
+
+  // Toggles the view-task action menu and collapses the status dropdown.
+  function handleTaskMenuToggle() {
+    setIsViewStatusMenuOpen(false)
+    setIsTaskMenuOpen((previousMenuState) => !previousMenuState)
+  }
+
+  // Opens Edit Task modal from the view-task action menu and pre-fills form fields.
+  function handleEditTaskOpen() {
+    if (!activeTask) {
+      return
+    }
+
+    const editableSubtasks = mapTaskSubtasksToEditableItems(activeTask)
+
+    setEditingTaskId(activeTask.id)
+    setEditTaskTitle(activeTask.title)
+    setEditTaskDescription(activeTask.description)
+    setEditTaskStatusValue(activeTask.status)
+    setEditTaskSubtasks(editableSubtasks.length > 0 ? editableSubtasks : [createEmptySubtaskItem('e.g. Make coffee')])
+    setIsEditStatusMenuOpen(false)
+    setIsEditTaskModalOpen(true)
+
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+    setActiveTaskId(null)
+  }
+
+  // Handles unimplemented Delete Task menu action by closing the menu.
+  function handleTaskDeleteAction() {
+    setIsTaskMenuOpen(false)
+  }
+
+  // Closes the Edit Task modal and edit-status dropdown.
+  function handleEditTaskModalClose() {
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
   }
 
   // Adds a new blank subtask row to the Add Task form.
@@ -283,6 +359,106 @@ function App() {
     resetAddTaskForm(targetColumn.name)
   }
 
+  // Adds a new blank subtask row in Edit Task form.
+  function handleEditTaskSubtaskAdd() {
+    setEditTaskSubtasks((previousSubtasks) => [...previousSubtasks, createEmptySubtaskItem()])
+  }
+
+  // Removes a subtask row from Edit Task form by row ID.
+  function handleEditTaskSubtaskRemove(subtaskId: string) {
+    setEditTaskSubtasks((previousSubtasks) => previousSubtasks.filter((subtask) => subtask.id !== subtaskId))
+  }
+
+  // Updates one subtask row value in Edit Task form.
+  function handleEditTaskSubtaskValueChange(subtaskId: string, nextValue: string) {
+    setEditTaskSubtasks((previousSubtasks) =>
+      previousSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, value: nextValue } : subtask)),
+    )
+  }
+
+  // Selects status in Edit Task modal and collapses the dropdown menu.
+  function handleEditTaskStatusSelect(nextStatusValue: string) {
+    setEditTaskStatusValue(nextStatusValue)
+    setIsEditStatusMenuOpen(false)
+  }
+
+  // Saves the edited task and moves it to the selected status column bottom.
+  function handleSaveTaskChanges() {
+    if (!activeBoard || !editingTaskId) {
+      return
+    }
+
+    const normalizedTitle = editTaskTitle.trim()
+    const normalizedStatus = editTaskStatusValue.trim()
+    const normalizedSubtasks = editTaskSubtasks
+      .map((subtask) => ({
+        ...subtask,
+        value: subtask.value.trim(),
+      }))
+      .filter((subtask) => subtask.value.length > 0)
+
+    if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || normalizedSubtasks.length === 0) {
+      return
+    }
+
+    const targetColumn = activeBoard.columns.find((column) => column.name === normalizedStatus) ?? activeBoard.columns[0]
+
+    if (!targetColumn) {
+      return
+    }
+
+    setBoardsData((previousBoards) =>
+      previousBoards.map((board) => {
+        if (board.id !== activeBoard.id) {
+          return board
+        }
+
+        const existingTask = board.columns.flatMap((column) => column.tasks).find((task) => task.id === editingTaskId)
+
+        if (!existingTask) {
+          return board
+        }
+
+        const updatedTask: BoardTaskPreview = {
+          ...existingTask,
+          completedSubtaskCount: normalizedSubtasks.filter((subtask) => Boolean(subtask.checked)).length,
+          description: editTaskDescription.trim(),
+          status: targetColumn.name,
+          subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
+            id: subtask.id || `${editingTaskId}-subtask-${subtaskIndex}`,
+            isCompleted: Boolean(subtask.checked),
+            title: subtask.value,
+          })),
+          title: normalizedTitle,
+          totalSubtaskCount: normalizedSubtasks.length,
+        }
+
+        return {
+          ...board,
+          columns: board.columns.map((column) => {
+            const tasksWithoutEditedTask = column.tasks.filter((task) => task.id !== editingTaskId)
+
+            if (column.id !== targetColumn.id) {
+              return {
+                ...column,
+                tasks: tasksWithoutEditedTask,
+              }
+            }
+
+            return {
+              ...column,
+              tasks: [...tasksWithoutEditedTask, updatedTask],
+            }
+          }),
+        }
+      }),
+    )
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+  }
+
   return (
     <main className={classNames(styles.app, mode === 'dark' ? styles.appDark : styles.appLight)}>
       <Sidebar
@@ -331,9 +507,12 @@ function App() {
         <Modal
           description={activeTask.description}
           isStatusMenuOpen={isViewStatusMenuOpen}
+          isTaskMenuOpen={isTaskMenuOpen}
           mode={mode}
           onClose={handleViewTaskModalClose}
-          onMenuOpen={() => {}}
+          onDeleteTask={handleTaskDeleteAction}
+          onEditTask={handleEditTaskOpen}
+          onMenuOpen={handleTaskMenuToggle}
           onStatusSelect={handleViewTaskStatusSelect}
           onStatusToggle={() => setIsViewStatusMenuOpen((previousOpenState) => !previousOpenState)}
           onSubtaskToggle={handleViewTaskSubtaskToggle}
@@ -366,6 +545,29 @@ function App() {
           taskDescriptionValue={addTaskDescription}
           taskTitleValue={addTaskTitle}
           variant="addTask"
+        />
+      ) : null}
+
+      {isEditTaskModalOpen ? (
+        <Modal
+          isStatusMenuOpen={isEditStatusMenuOpen}
+          mode={mode}
+          onAddSubtask={handleEditTaskSubtaskAdd}
+          onClose={handleEditTaskModalClose}
+          onPrimaryAction={handleSaveTaskChanges}
+          onStatusSelect={handleEditTaskStatusSelect}
+          onStatusToggle={() => setIsEditStatusMenuOpen((previousOpenState) => !previousOpenState)}
+          onSubtaskRemove={handleEditTaskSubtaskRemove}
+          onSubtaskValueChange={handleEditTaskSubtaskValueChange}
+          onTaskDescriptionChange={(event) => setEditTaskDescription(event.target.value)}
+          onTaskTitleChange={(event) => setEditTaskTitle(event.target.value)}
+          statusLabel="Status"
+          statusOptions={statusOptions}
+          statusValue={editTaskStatusValue}
+          subtasks={editTaskSubtasks}
+          taskDescriptionValue={editTaskDescription}
+          taskTitleValue={editTaskTitle}
+          variant="editTask"
         />
       ) : null}
     </main>

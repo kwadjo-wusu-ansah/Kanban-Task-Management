@@ -35,6 +35,10 @@
   overflow: visible;
 }
 
+.panelEditTask {
+  overflow: visible;
+}
+
 .panelLight {
   background: var(--color-white);
   color: var(--color-black);
@@ -84,6 +88,10 @@
   padding: 0;
 }
 
+.menuRegion {
+  position: relative;
+}
+
 .menuButton:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -92,6 +100,43 @@
 .menuIcon {
   block-size: 20px;
   inline-size: 4.62px;
+}
+
+.taskMenu {
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  display: grid;
+  gap: var(--space-2);
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  min-inline-size: 192px;
+  padding: var(--space-4);
+  position: absolute;
+  z-index: 3;
+}
+
+.panelLight .taskMenu {
+  background: var(--color-white);
+}
+
+.panelDark .taskMenu {
+  background: var(--color-very-dark-grey);
+}
+
+.taskMenuAction {
+  background: transparent;
+  border: 0;
+  color: var(--color-medium-grey);
+  cursor: pointer;
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  padding: 0;
+  text-align: left;
+}
+
+.taskMenuActionDanger {
+  color: var(--color-red);
 }
 
 .description {

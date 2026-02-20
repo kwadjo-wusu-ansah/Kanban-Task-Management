@@ -130,11 +130,14 @@ function Modal({
   description,
   isPrimaryActionDisabled = false,
   isStatusMenuOpen = false,
+  isTaskMenuOpen = false,
   mode = 'light',
   onAddColumn,
   onAddSubtask,
   onClose,
   onColumnRemove,
+  onDeleteTask,
+  onEditTask,
   onMenuOpen,
   onPrimaryAction,
   onSecondaryAction,
@@ -176,6 +179,7 @@ function Modal({
   const completedSubtaskCount = subtasks.filter((item) => item.checked).length
   const isDeleteVariant = variant === 'deleteBoard' || variant === 'deleteTask'
   const isAddTaskVariant = variant === 'addTask'
+  const isEditTaskVariant = variant === 'editTask'
   const isViewTaskVariant = variant === 'viewTask'
   const isTaskFormVariant = variant === 'addTask' || variant === 'editTask'
   const isBoardFormVariant = variant === 'addBoard' || variant === 'editBoard'
@@ -188,6 +192,7 @@ function Modal({
           styles.panel,
           mode === 'dark' ? styles.panelDark : styles.panelLight,
           isAddTaskVariant && styles.panelAddTask,
+          isEditTaskVariant && styles.panelEditTask,
           isViewTaskVariant && styles.panelViewTask,
           isDeleteVariant && styles.panelDelete,
           className,
@@ -199,9 +204,21 @@ function Modal({
         <div className={styles.headerRow}>
           <h2 className={classNames(styles.title, isDeleteVariant && styles.titleDanger)}>{resolvedTitle}</h2>
           {isViewTaskVariant ? (
-            <button aria-label="Open task actions" className={styles.menuButton} onClick={onMenuOpen} type="button">
-              <img alt="" aria-hidden="true" className={styles.menuIcon} src={iconVerticalEllipsis} />
-            </button>
+            <div className={styles.menuRegion}>
+              <button aria-label="Open task actions" className={styles.menuButton} onClick={onMenuOpen} type="button">
+                <img alt="" aria-hidden="true" className={styles.menuIcon} src={iconVerticalEllipsis} />
+              </button>
+              {isTaskMenuOpen ? (
+                <div className={styles.taskMenu} role="menu">
+                  <button className={styles.taskMenuAction} onClick={onEditTask} role="menuitem" type="button">
+                    Edit Task
+                  </button>
+                  <button className={classNames(styles.taskMenuAction, styles.taskMenuActionDanger)} onClick={onDeleteTask} role="menuitem" type="button">
+                    Delete Task
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
