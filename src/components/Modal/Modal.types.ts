@@ -1,4 +1,4 @@
-import type { HTMLAttributes, MouseEventHandler } from 'react'
+import type { ChangeEventHandler, HTMLAttributes, MouseEventHandler } from 'react'
 import type { DropdownOption } from '../Input'
 
 export type ModalMode = 'light' | 'dark'
@@ -15,6 +15,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   boardNameValue?: string
   columns?: ModalItem[]
   description?: string
+  isPrimaryActionDisabled?: boolean
   isStatusMenuOpen?: boolean
   mode?: ModalMode
   onAddColumn?: () => void
@@ -28,6 +29,9 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   onStatusToggle?: MouseEventHandler<HTMLButtonElement>
   onSubtaskRemove?: (subtaskId: string) => void
   onSubtaskToggle?: (subtaskId: string) => void
+  onSubtaskValueChange?: (subtaskId: string, nextValue: string) => void
+  onTaskDescriptionChange?: ChangeEventHandler<HTMLTextAreaElement>
+  onTaskTitleChange?: ChangeEventHandler<HTMLInputElement>
   open?: boolean
   primaryActionLabel?: string
   secondaryActionLabel?: string
@@ -35,7 +39,9 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   statusOptions?: DropdownOption[]
   statusValue?: string
   subtasks?: ModalItem[]
+  taskDescriptionPlaceholder?: string
   taskDescriptionValue?: string
+  taskTitlePlaceholder?: string
   taskTitleValue?: string
   title?: string
   variant: ModalVariant

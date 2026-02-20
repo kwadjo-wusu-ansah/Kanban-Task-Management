@@ -27,6 +27,9 @@ const DEFAULT_BOARD_COLUMNS: ModalItem[] = [
   { id: 'board-column-2', placeholder: 'e.g. Doing', value: 'Doing' },
 ]
 
+const DEFAULT_TASK_TITLE_PLACEHOLDER = 'e.g. Take coffee break'
+const DEFAULT_TASK_DESCRIPTION_PLACEHOLDER = "e.g. It's always good to take a break. This 15 minute break will recharge the batteries a little."
+
 // Resolves the fallback modal title from the selected modal variant.
 function getFallbackTitle(variant: ModalVariant): string {
   if (variant === 'viewTask') {
@@ -94,6 +97,24 @@ function getFallbackDescription(variant: ModalVariant): string {
   return ''
 }
 
+// Resolves fallback task-title value for task form variants.
+function getFallbackTaskTitleValue(variant: ModalVariant): string {
+  if (variant === 'editTask') {
+    return 'Build production-ready styles'
+  }
+
+  return ''
+}
+
+// Resolves fallback task-description value for task form variants.
+function getFallbackTaskDescriptionValue(variant: ModalVariant): string {
+  if (variant === 'editTask') {
+    return 'Build and style all interactive components to match the design system.'
+  }
+
+  return ''
+}
+
 // Resolves the status options list with safe defaults when no options are provided.
 function resolveStatusOptions(
   statusOptions: ModalProps['statusOptions'],
@@ -107,6 +128,7 @@ function Modal({
   className,
   columns = DEFAULT_BOARD_COLUMNS,
   description,
+  isPrimaryActionDisabled = false,
   isStatusMenuOpen = false,
   mode = 'light',
   onAddColumn,
@@ -120,6 +142,9 @@ function Modal({
   onStatusToggle,
   onSubtaskRemove,
   onSubtaskToggle,
+  onSubtaskValueChange,
+  onTaskDescriptionChange,
+  onTaskTitleChange,
   open = true,
   primaryActionLabel,
   secondaryActionLabel = 'Cancel',
@@ -127,8 +152,10 @@ function Modal({
   statusOptions,
   statusValue,
   subtasks = DEFAULT_VIEW_SUBTASKS,
-  taskDescriptionValue = 'Build and style all interactive components to match the design system.',
-  taskTitleValue = 'Build production-ready styles',
+  taskDescriptionPlaceholder = DEFAULT_TASK_DESCRIPTION_PLACEHOLDER,
+  taskDescriptionValue,
+  taskTitlePlaceholder = DEFAULT_TASK_TITLE_PLACEHOLDER,
+  taskTitleValue,
   title,
   variant,
   ...props
@@ -144,8 +171,11 @@ function Modal({
   const resolvedPrimaryActionLabel = primaryActionLabel ?? getPrimaryActionLabel(variant)
   const resolvedTaskFormSubtasks = subtasks.length > 0 ? subtasks : DEFAULT_FORM_SUBTASKS
   const resolvedBoardColumns = columns.length > 0 ? columns : DEFAULT_BOARD_COLUMNS
+  const resolvedTaskTitleValue = taskTitleValue ?? getFallbackTaskTitleValue(variant)
+  const resolvedTaskDescriptionValue = taskDescriptionValue ?? getFallbackTaskDescriptionValue(variant)
   const completedSubtaskCount = subtasks.filter((item) => item.checked).length
   const isDeleteVariant = variant === 'deleteBoard' || variant === 'deleteTask'
+  const isAddTaskVariant = variant === 'addTask'
   const isViewTaskVariant = variant === 'viewTask'
   const isTaskFormVariant = variant === 'addTask' || variant === 'editTask'
   const isBoardFormVariant = variant === 'addBoard' || variant === 'editBoard'
@@ -157,6 +187,7 @@ function Modal({
         className={classNames(
           styles.panel,
           mode === 'dark' ? styles.panelDark : styles.panelLight,
+          isAddTaskVariant && styles.panelAddTask,
           isViewTaskVariant && styles.panelViewTask,
           isDeleteVariant && styles.panelDelete,
           className,
@@ -210,14 +241,23 @@ function Modal({
 
         {isTaskFormVariant ? (
           <div className={styles.fieldStack}>
-            <Input fieldLabel="Title" mode={mode} state="idle" value={taskTitleValue} variant="textField" />
+            <Input
+              fieldLabel="Title"
+              mode={mode}
+              onTextChange={onTaskTitleChange}
+              placeholder={taskTitlePlaceholder}
+              state="idle"
+              value={resolvedTaskTitleValue}
+              variant="textField"
+            />
             <div className={styles.textAreaGroup}>
               <span className={styles.textAreaLabel}>Description</span>
               <textarea
                 className={styles.textAreaControl}
-                placeholder="e.g. It's always good to take a break."
-                readOnly
-                value={taskDescriptionValue}
+                onChange={onTaskDescriptionChange}
+                placeholder={taskDescriptionPlaceholder}
+                readOnly={!onTaskDescriptionChange}
+                value={resolvedTaskDescriptionValue}
               />
             </div>
             <div className={styles.sectionGroup}>
@@ -228,6 +268,7 @@ function Modal({
                     <Input
                       className={styles.editableInput}
                       mode={mode}
+                      onTextChange={(event) => onSubtaskValueChange?.(subtask.id, event.target.value)}
                       placeholder={subtask.placeholder}
                       state="idle"
                       value={subtask.value}
@@ -259,7 +300,13 @@ function Modal({
               value={resolvedStatusValue}
               variant="dropdown"
             />
-            <Button className={styles.fullWidthButton} onClick={onPrimaryAction} size="large" variant="primary">
+            <Button
+              className={styles.fullWidthButton}
+              disabled={isPrimaryActionDisabled}
+              onClick={onPrimaryAction}
+              size="large"
+              variant="primary"
+            >
               {resolvedPrimaryActionLabel}
             </Button>
           </div>
