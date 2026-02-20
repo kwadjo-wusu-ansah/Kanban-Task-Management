@@ -293,6 +293,13 @@
   flex: 1 1 0;
 }
 
+.rowButtonSecondaryForm {
+  block-size: 48px;
+  border-radius: var(--radius-24);
+  font-size: var(--text-heading-m-size);
+  line-height: var(--line-height-compact);
+}
+
 @media (max-width: 640px) {
   .panel {
     gap: var(--space-5);

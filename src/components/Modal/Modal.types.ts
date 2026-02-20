@@ -2,7 +2,7 @@ import type { ChangeEventHandler, HTMLAttributes, MouseEventHandler } from 'reac
 import type { DropdownOption } from '../Input'
 
 export type ModalMode = 'light' | 'dark'
-export type ModalVariant = 'viewTask' | 'addTask' | 'editTask' | 'addBoard' | 'editBoard' | 'deleteBoard' | 'deleteTask'
+export type ModalVariant = 'viewTask' | 'addTask' | 'editTask' | 'addBoard' | 'editBoard' | 'addColumn' | 'deleteBoard' | 'deleteTask'
 
 export interface ModalItem {
   checked?: boolean
@@ -15,6 +15,8 @@ export interface ModalItem {
 export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   boardNameErrorMessage?: string
   boardNameValue?: string
+  columnNameErrorMessage?: string
+  columnNameValue?: string
   columnsErrorMessage?: string
   columns?: ModalItem[]
   description?: string
@@ -27,6 +29,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   onBoardNameChange?: ChangeEventHandler<HTMLInputElement>
   onClose?: () => void
   onColumnRemove?: (columnId: string) => void
+  onColumnNameChange?: ChangeEventHandler<HTMLInputElement>
   onColumnValueChange?: (columnId: string, nextValue: string) => void
   onDeleteTask?: () => void
   onEditTask?: () => void

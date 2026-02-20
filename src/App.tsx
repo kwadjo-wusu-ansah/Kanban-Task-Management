@@ -180,6 +180,9 @@ function App() {
   const [addBoardName, setAddBoardName] = useState('')
   const [addBoardNameError, setAddBoardNameError] = useState('')
   const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
+  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
+  const [addColumnName, setAddColumnName] = useState('')
+  const [addColumnNameError, setAddColumnNameError] = useState('')
 
   const [isBoardMenuOpen, setIsBoardMenuOpen] = useState(false)
 
@@ -223,6 +226,12 @@ function App() {
     setAddBoardName('')
     setAddBoardNameError('')
     setAddBoardColumns(createInitialAddBoardColumns())
+  }
+
+  // Resets local Add Column form state to initial values.
+  function resetAddColumnForm() {
+    setAddColumnName('')
+    setAddColumnNameError('')
   }
 
   // Resets local Edit Board form state and clears validation feedback.
@@ -271,6 +280,8 @@ function App() {
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
@@ -298,6 +309,8 @@ function App() {
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
@@ -330,6 +343,8 @@ function App() {
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
@@ -355,6 +370,8 @@ function App() {
     setIsEditStatusMenuOpen(false)
 
     setIsBoardMenuOpen(false)
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
@@ -364,6 +381,31 @@ function App() {
 
     setIsAddBoardModalOpen(true)
     resetAddBoardForm()
+  }
+
+  // Opens Add Column modal with a clean form and closes other overlays.
+  function handleAddColumnOpen() {
+    if (!activeBoard) {
+      return
+    }
+
+    setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+    setIsAddTaskModalOpen(false)
+    setIsAddStatusMenuOpen(false)
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+    setIsBoardMenuOpen(false)
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
+    resetDeleteBoardState()
+    resetDeleteTaskState()
+    setIsAddColumnModalOpen(true)
+    resetAddColumnForm()
   }
 
   // Closes the view-task modal and related menu/dropdown state.
@@ -383,6 +425,12 @@ function App() {
   function handleAddBoardModalClose() {
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+  }
+
+  // Closes the Add Column modal and clears column-name validation feedback.
+  function handleAddColumnModalClose() {
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
   }
 
   // Closes the Delete Board modal.
@@ -408,6 +456,8 @@ function App() {
     }
 
     setIsBoardMenuOpen(false)
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
     resetDeleteTaskState()
@@ -435,6 +485,8 @@ function App() {
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
 
     setIsBoardMenuOpen(false)
     resetDeleteBoardState()
@@ -469,6 +521,8 @@ function App() {
     setIsEditStatusMenuOpen(false)
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
     setIsBoardMenuOpen(false)
@@ -700,6 +754,53 @@ function App() {
     setIsAddTaskModalOpen(false)
     setIsAddStatusMenuOpen(false)
     resetAddTaskForm(targetColumn.name)
+  }
+
+  // Updates the Add Column name field and clears validation once the value changes.
+  function handleAddColumnNameChange(nextName: string) {
+    setAddColumnName(nextName)
+
+    if (addColumnNameError) {
+      setAddColumnNameError('')
+    }
+  }
+
+  // Creates a new column at the end of the active board column list.
+  function handleCreateColumn() {
+    if (!activeBoard) {
+      return
+    }
+
+    const normalizedColumnName = addColumnName.trim()
+
+    if (normalizedColumnName.length === 0) {
+      setAddColumnNameError("Can't be empty")
+      return
+    }
+
+    const nextColumnIndex = activeBoard.columns.length
+    const nextColumn = {
+      accentColor: COLUMN_ACCENT_COLORS[nextColumnIndex % COLUMN_ACCENT_COLORS.length],
+      id: createClientId('column'),
+      name: normalizedColumnName,
+      tasks: [],
+    }
+
+    setBoardsData((previousBoards) =>
+      previousBoards.map((board) => {
+        if (board.id !== activeBoard.id) {
+          return board
+        }
+
+        return {
+          ...board,
+          columns: [...board.columns, nextColumn],
+        }
+      }),
+    )
+
+    setIsAddColumnModalOpen(false)
+    resetAddColumnForm()
   }
 
   // Updates the Add Board name field and clears validation once the value changes.
@@ -1014,12 +1115,12 @@ function App() {
                 />
               ))}
               <div className={styles.addColumnLane}>
-                <AddColumnCard mode={mode} />
+                <AddColumnCard mode={mode} onClick={handleAddColumnOpen} />
               </div>
             </div>
           ) : (
             <div className={styles.emptyStateWrapper}>
-              <EmptyBoardState mode={mode} onAddColumn={() => {}} />
+              <EmptyBoardState mode={mode} onAddColumn={handleAddColumnOpen} />
             </div>
           )}
         </section>
@@ -1124,6 +1225,20 @@ function App() {
           onColumnValueChange={handleEditBoardColumnValueChange}
           onPrimaryAction={handleSaveBoardChanges}
           variant="editBoard"
+        />
+      ) : null}
+
+      {isAddColumnModalOpen ? (
+        <Modal
+          columnNameErrorMessage={addColumnNameError}
+          columnNameValue={addColumnName}
+          mode={mode}
+          onClose={handleAddColumnModalClose}
+          onColumnNameChange={(event) => handleAddColumnNameChange(event.target.value)}
+          onPrimaryAction={handleCreateColumn}
+          onSecondaryAction={handleAddColumnModalClose}
+          secondaryActionLabel="Cancel"
+          variant="addColumn"
         />
       ) : null}
 

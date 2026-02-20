@@ -47,6 +47,10 @@ function getFallbackTitle(variant: ModalVariant): string {
     return 'Edit Board'
   }
 
+  if (variant === 'addColumn') {
+    return 'Add New Column'
+  }
+
   if (variant === 'deleteBoard') {
     return 'Delete this board?'
   }
@@ -70,6 +74,10 @@ function getPrimaryActionLabel(variant: ModalVariant): string {
 
   if (variant === 'editBoard') {
     return 'Save Changes'
+  }
+
+  if (variant === 'addColumn') {
+    return 'Create Column'
   }
 
   return 'Delete'
@@ -117,11 +125,13 @@ function resolveStatusOptions(
   return statusOptions && statusOptions.length > 0 ? statusOptions : DEFAULT_STATUS_OPTIONS
 }
 
-// Renders a reusable modal shell with light/dark modes and seven modal variants.
+// Renders a reusable modal shell with light/dark modes and eight modal variants.
 function Modal({
   boardNameErrorMessage,
   boardNameValue = 'Platform Launch',
   className,
+  columnNameErrorMessage,
+  columnNameValue = '',
   columnsErrorMessage,
   columns = DEFAULT_BOARD_COLUMNS,
   description,
@@ -134,6 +144,7 @@ function Modal({
   onBoardNameChange,
   onClose,
   onColumnRemove,
+  onColumnNameChange,
   onColumnValueChange,
   onDeleteTask,
   onEditTask,
@@ -183,6 +194,7 @@ function Modal({
   const isViewTaskVariant = variant === 'viewTask'
   const isTaskFormVariant = variant === 'addTask' || variant === 'editTask'
   const isBoardFormVariant = variant === 'addBoard' || variant === 'editBoard'
+  const isColumnFormVariant = variant === 'addColumn'
 
   return (
     <div className={classNames(styles.backdrop, mode === 'dark' ? styles.backdropDark : styles.backdropLight)} onClick={onClose}>
@@ -376,6 +388,34 @@ function Modal({
             <Button className={styles.fullWidthButton} onClick={onPrimaryAction} size="large" variant="primary">
               {resolvedPrimaryActionLabel}
             </Button>
+          </div>
+        ) : null}
+
+        {isColumnFormVariant ? (
+          <div className={styles.fieldStack}>
+            <Input
+              errorMessage={columnNameErrorMessage}
+              fieldLabel="Column Name"
+              mode={mode}
+              onTextChange={onColumnNameChange}
+              placeholder="e.g. Doing"
+              state={columnNameErrorMessage ? 'error' : 'idle'}
+              value={columnNameValue}
+              variant="textField"
+            />
+            <div className={styles.buttonRow}>
+              <Button className={styles.rowButton} onClick={onPrimaryAction} size="large" variant="primary">
+                {resolvedPrimaryActionLabel}
+              </Button>
+              <Button
+                className={classNames(styles.rowButton, styles.rowButtonSecondaryForm)}
+                mode={mode}
+                onClick={onSecondaryAction ?? onClose}
+                variant="secondary"
+              >
+                {secondaryActionLabel}
+              </Button>
+            </div>
           </div>
         ) : null}
 
