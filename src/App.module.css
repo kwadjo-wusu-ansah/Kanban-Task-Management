@@ -46,19 +46,19 @@
 }
 
 .columnsScroller {
+  align-items: flex-start;
   display: grid;
   gap: var(--space-6);
-  grid-auto-columns: max-content;
+  grid-auto-columns: 280px;
   grid-auto-flow: column;
   inline-size: max-content;
   min-block-size: 100%;
 }
 
 .addColumnLane {
-  align-self: stretch;
+  block-size: calc(100vh - 145px);
   display: flex;
-  min-block-size: calc(100vh - 145px);
-  min-inline-size: 280px;
+  inline-size: 280px;
   padding-block-start: 39px;
 }
 
