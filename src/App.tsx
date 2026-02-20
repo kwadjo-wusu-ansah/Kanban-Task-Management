@@ -1,53 +1,40 @@
 import { useState } from 'react'
-import { Button, Sidebar } from './components'
-import type { SidebarBoard, SidebarMode, SidebarTheme } from './components'
+import { Button, TaskCard } from './components'
+import type { TaskCardMode } from './components'
+import { classNames } from './utils'
 import styles from './App.module.css'
 
-const previewBoards: SidebarBoard[] = [
-  { id: 'platform-launch', name: 'Platform Launch' },
-  { id: 'marketing-plan', name: 'Marketing Plan' },
-  { id: 'roadmap', name: 'Roadmap' },
+const previewTasks = [
+  { completedSubtasks: 2, id: 'build-ui', title: 'Build UI for onboarding flow', totalSubtasks: 5 },
+  { completedSubtasks: 0, id: 'audit-copy', title: 'Audit marketing copy and CTA hierarchy', totalSubtasks: 3 },
+  { completedSubtasks: 1, id: 'retro-notes', title: 'Write sprint retro notes', totalSubtasks: 1 },
 ]
 
-// Renders a focused preview page for the reusable Sidebar component.
+// Renders a focused preview page for the reusable TaskCard component.
 function App() {
-  const [activeBoardId, setActiveBoardId] = useState('platform-launch')
-  const [isSidebarHidden, setIsSidebarHidden] = useState(false)
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('light')
-  const [sidebarTheme, setSidebarTheme] = useState<SidebarTheme>('light')
+  const [taskCardMode, setTaskCardMode] = useState<TaskCardMode>('light')
 
   return (
     <main className={styles.page}>
       <header className={styles.controls}>
-        <Button onClick={() => setSidebarMode('light')} size="small" variant={sidebarMode === 'light' ? 'primary' : 'secondary'}>
-          Light Sidebar
+        <Button onClick={() => setTaskCardMode('light')} size="small" variant={taskCardMode === 'light' ? 'primary' : 'secondary'}>
+          Light Task Card
         </Button>
-        <Button onClick={() => setSidebarMode('dark')} size="small" variant={sidebarMode === 'dark' ? 'primary' : 'secondary'}>
-          Dark Sidebar
-        </Button>
-        <Button
-          onClick={() => setIsSidebarHidden((previousHidden) => !previousHidden)}
-          size="small"
-          variant={isSidebarHidden ? 'primary' : 'secondary'}
-        >
-          {isSidebarHidden ? 'Show Sidebar' : 'Hide Sidebar'}
+        <Button onClick={() => setTaskCardMode('dark')} size="small" variant={taskCardMode === 'dark' ? 'primary' : 'secondary'}>
+          Dark Task Card
         </Button>
       </header>
 
-      <section className={styles.canvas}>
-        <Sidebar
-          activeBoardId={activeBoardId}
-          boardCount={sidebarMode === 'dark' ? 8 : 3}
-          boards={previewBoards}
-          hidden={isSidebarHidden}
-          mode={sidebarMode}
-          onBoardSelect={setActiveBoardId}
-          onCreateBoard={() => {}}
-          onHideSidebar={() => setIsSidebarHidden(true)}
-          onShowSidebar={() => setIsSidebarHidden(false)}
-          onThemeToggle={() => setSidebarTheme((previousTheme) => (previousTheme === 'dark' ? 'light' : 'dark'))}
-          theme={sidebarTheme}
-        />
+      <section className={classNames(styles.canvas, taskCardMode === 'dark' ? styles.canvasDark : styles.canvasLight)}>
+        {previewTasks.map((task) => (
+          <TaskCard
+            completedSubtaskCount={task.completedSubtasks}
+            key={task.id}
+            mode={taskCardMode}
+            title={task.title}
+            totalSubtaskCount={task.totalSubtasks}
+          />
+        ))}
       </section>
     </main>
   )
