@@ -17,11 +17,6 @@ const DEFAULT_VIEW_SUBTASKS: ModalItem[] = [
   { checked: false, id: 'view-subtask-3', value: 'Connect API integrations' },
 ]
 
-const DEFAULT_FORM_SUBTASKS: ModalItem[] = [
-  { id: 'task-form-1', placeholder: 'e.g. Make coffee', value: 'Build production-ready styles' },
-  { id: 'task-form-2', placeholder: 'e.g. Drink coffee & smile', value: 'Connect API integrations' },
-]
-
 const DEFAULT_BOARD_COLUMNS: ModalItem[] = [
   { id: 'board-column-1', placeholder: 'e.g. Todo', value: 'Todo' },
   { id: 'board-column-2', placeholder: 'e.g. Doing', value: 'Doing' },
@@ -155,6 +150,7 @@ function Modal({
   open = true,
   primaryActionLabel,
   secondaryActionLabel = 'Cancel',
+  subtaskErrorMessage,
   statusLabel = 'Status',
   statusOptions,
   statusValue,
@@ -176,7 +172,7 @@ function Modal({
   const resolvedTitle = title ?? getFallbackTitle(variant)
   const resolvedDescription = description ?? getFallbackDescription(variant)
   const resolvedPrimaryActionLabel = primaryActionLabel ?? getPrimaryActionLabel(variant)
-  const resolvedTaskFormSubtasks = subtasks.length > 0 ? subtasks : DEFAULT_FORM_SUBTASKS
+  const resolvedTaskFormSubtasks = subtasks
   const resolvedBoardColumns = columns
   const resolvedTaskTitleValue = taskTitleValue ?? getFallbackTaskTitleValue(variant)
   const resolvedTaskDescriptionValue = taskDescriptionValue ?? getFallbackTaskDescriptionValue(variant)
@@ -307,6 +303,7 @@ function Modal({
                   </div>
                 ))}
               </div>
+              {subtaskErrorMessage ? <span className={styles.sectionErrorMessage}>{subtaskErrorMessage}</span> : null}
               <Button className={styles.fullWidthButton} mode={mode} onClick={onAddSubtask} size="small" variant="secondary">
                 + Add New Subtask
               </Button>

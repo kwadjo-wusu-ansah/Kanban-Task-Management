@@ -166,6 +166,7 @@ function App() {
   const [addTaskDescription, setAddTaskDescription] = useState('')
   const [addTaskStatusValue, setAddTaskStatusValue] = useState('')
   const [addTaskSubtasks, setAddTaskSubtasks] = useState<ModalItem[]>(createInitialAddTaskSubtasks)
+  const [addTaskSubtasksError, setAddTaskSubtasksError] = useState('')
 
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
@@ -213,6 +214,7 @@ function App() {
     setAddTaskDescription('')
     setAddTaskStatusValue(initialStatusValue)
     setAddTaskSubtasks(createInitialAddTaskSubtasks())
+    setAddTaskSubtasksError('')
     setIsAddStatusMenuOpen(false)
   }
 
@@ -598,11 +600,18 @@ function App() {
   // Adds a new blank subtask row to the Add Task form.
   function handleAddTaskSubtaskAdd() {
     setAddTaskSubtasks((previousSubtasks) => [...previousSubtasks, createEmptySubtaskItem()])
+    setAddTaskSubtasksError('')
   }
 
   // Removes a subtask row from the Add Task form by row ID.
   function handleAddTaskSubtaskRemove(subtaskId: string) {
+    if (addTaskSubtasks.length <= 1) {
+      setAddTaskSubtasksError('Keep at least one subtask')
+      return
+    }
+
     setAddTaskSubtasks((previousSubtasks) => previousSubtasks.filter((subtask) => subtask.id !== subtaskId))
+    setAddTaskSubtasksError('')
   }
 
   // Updates one subtask row value in the Add Task form.
@@ -610,6 +619,7 @@ function App() {
     setAddTaskSubtasks((previousSubtasks) =>
       previousSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, errorMessage: undefined, value: nextValue } : subtask)),
     )
+    setAddTaskSubtasksError('')
   }
 
   // Selects status in Add Task modal and collapses the dropdown menu.
@@ -638,6 +648,9 @@ function App() {
 
     if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || hasSubtaskError || normalizedSubtasks.length === 0) {
       setAddTaskSubtasks(nextSubtasksWithErrors)
+      if (normalizedSubtasks.length === 0) {
+        setAddTaskSubtasksError('Keep at least one subtask')
+      }
       return
     }
 
@@ -1047,6 +1060,7 @@ function App() {
           onSubtaskValueChange={handleAddTaskSubtaskValueChange}
           onTaskDescriptionChange={(event) => setAddTaskDescription(event.target.value)}
           onTaskTitleChange={(event) => setAddTaskTitle(event.target.value)}
+          subtaskErrorMessage={addTaskSubtasksError}
           statusLabel="Status"
           statusOptions={statusOptions}
           statusValue={addTaskStatusValue}
