@@ -26,7 +26,8 @@
   line-height: var(--line-height-compact);
 }
 
-.card:hover .label {
+.card:hover .label,
+.card:active .label {
   color: var(--color-primary);
 }
 

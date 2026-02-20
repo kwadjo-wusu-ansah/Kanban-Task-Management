@@ -40,7 +40,8 @@
   color: var(--color-white);
 }
 
-.card:hover .title {
+.card:hover .title,
+.card:active .title {
   color: var(--color-primary);
 }
 

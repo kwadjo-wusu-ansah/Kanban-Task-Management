@@ -112,7 +112,8 @@
   inline-size: 4.62px;
 }
 
-.menuButton:hover .menuIcon {
+.menuButton:hover .menuIcon,
+.menuButton:active .menuIcon {
   opacity: 0.7;
 }
 

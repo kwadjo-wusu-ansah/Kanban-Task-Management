@@ -61,10 +61,21 @@
   text-align: left;
 }
 
-.boardItemButton:hover {
-  background: rgba(99, 95, 199, 0.1);
+.boardItemButton:not(.boardItemActive):hover,
+.boardItemButton:not(.boardItemActive):active {
   border-start-end-radius: 100px;
   border-end-end-radius: 100px;
+}
+
+.light .boardItemButton:not(.boardItemActive):hover,
+.light .boardItemButton:not(.boardItemActive):active {
+  background: rgba(99, 95, 199, 0.1);
+}
+
+.dark .boardItemButton:not(.boardItemActive):hover,
+.dark .boardItemButton:not(.boardItemActive):active {
+  background: var(--color-white);
+  color: var(--color-primary);
 }
 
 .boardItemActive {
@@ -74,7 +85,8 @@
   color: var(--color-white);
 }
 
-.boardItemActive:hover {
+.boardItemActive:hover,
+.boardItemActive:active {
   background: var(--color-primary);
 }
 
@@ -133,6 +145,11 @@
   position: relative;
 }
 
+.themeSwitch:hover,
+.themeSwitch:active {
+  background: var(--color-primary-hover);
+}
+
 .themeSwitchThumb {
   background: var(--color-white);
   border-radius: 50%;
@@ -163,11 +180,21 @@
   text-align: left;
 }
 
-.hideButton:hover {
-  background: rgba(99, 95, 199, 0.1);
+.hideButton:hover,
+.hideButton:active {
   border-start-end-radius: 100px;
   border-end-end-radius: 100px;
   color: var(--color-primary);
+}
+
+.light .hideButton:hover,
+.light .hideButton:active {
+  background: rgba(99, 95, 199, 0.1);
+}
+
+.dark .hideButton:hover,
+.dark .hideButton:active {
+  background: var(--color-white);
 }
 
 .hideIcon {
