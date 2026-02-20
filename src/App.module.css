@@ -1,0 +1,42 @@
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.panel {
+  background: var(--color-white);
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  max-width: 960px;
+  padding: var(--space-8);
+  width: 100%;
+}
+
+.title {
+  color: var(--color-black);
+  font-size: var(--text-heading-xl-size);
+  margin: 0;
+  text-align: center;
+}
+
+.message {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  margin: var(--space-2) 0 var(--space-6);
+  text-align: center;
+}
+
+.buttonGrid {
+  align-items: center;
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+}
+
+@media (min-width: 768px) {
+  .buttonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
