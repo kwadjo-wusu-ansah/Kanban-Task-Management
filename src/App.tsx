@@ -15,7 +15,7 @@ const fallbackBoards: SidebarBoard[] = [
 const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
 const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
 const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
-const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae', '#f4f7fd']
+const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
 
 let nextClientId = 0
 
@@ -1103,9 +1103,9 @@ function App() {
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
           {hasColumns ? (
             <div className={styles.columnsScroller}>
-              {activeBoard?.columns.map((column) => (
+              {activeBoard?.columns.map((column, columnIndex) => (
                 <Tasks
-                  accentColor={column.accentColor}
+                  accentColor={column.accentColor || COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length]}
                   heading={column.name}
                   key={column.id}
                   mode={mode}

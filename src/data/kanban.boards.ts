@@ -1,7 +1,7 @@
 import { typedKanbanDataset } from './kanban.dataset'
 import type { BoardPreview, BoardSummary, DatasetBoard } from './kanban.types'
 
-const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae', '#f4f7fd']
+const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
 
 // Builds board-level task totals used by the design-system preview cards.
 function buildBoardSummaries(boards: DatasetBoard[]): BoardSummary[] {
