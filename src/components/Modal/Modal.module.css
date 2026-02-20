@@ -31,6 +31,10 @@
   overflow: visible;
 }
 
+.panelAddTask {
+  overflow: visible;
+}
+
 .panelLight {
   background: var(--color-white);
   color: var(--color-black);
