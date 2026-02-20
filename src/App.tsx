@@ -26,7 +26,13 @@ function App() {
         </Button>
       </header>
 
-      <section className={classNames(styles.canvas, headerMode === 'dark' ? styles.canvasDark : styles.canvasLight)}>
+      <section
+        className={classNames(
+          styles.canvas,
+          headerMode === 'dark' ? styles.canvasDark : styles.canvasLight,
+          isSidebarVisible ? styles.canvasSidebarVisible : styles.canvasSidebarHidden,
+        )}
+      >
         <Header boardName="Platform Launch" mode={headerMode} sidebarVisible={isSidebarVisible} />
       </section>
     </main>

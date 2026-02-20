@@ -1,9 +1,10 @@
 .header {
   align-items: center;
+  block-size: 97px;
   border-block-end: 1px solid transparent;
   display: flex;
+  inline-size: 100%;
   justify-content: space-between;
-  min-block-size: 97px;
 }
 
 .light {
@@ -17,11 +18,11 @@
 }
 
 .sidebarVisible {
-  padding-inline: var(--space-6);
+  padding-inline: var(--space-6) var(--space-8);
 }
 
 .sidebarHidden {
-  padding-inline-end: var(--space-6);
+  padding-inline-end: var(--space-8);
 }
 
 .leadingGroup {
@@ -35,8 +36,8 @@
   block-size: 97px;
   border-inline-end: 1px solid transparent;
   display: flex;
-  inline-size: 300px;
-  padding-inline-start: 34px;
+  inline-size: 261px;
+  padding-inline-start: var(--space-8);
 }
 
 .light .logoSlot {
@@ -59,7 +60,7 @@
   line-height: var(--line-height-compact);
   margin: 0;
   overflow: hidden;
-  padding-inline-start: var(--space-6);
+  padding-inline-start: var(--space-8);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -80,6 +81,7 @@
 }
 
 .addTaskButton {
+  inline-size: 164px;
   min-inline-size: 164px;
 }
 

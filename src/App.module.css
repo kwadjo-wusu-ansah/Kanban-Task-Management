@@ -14,12 +14,18 @@
 }
 
 .canvas {
-  border-radius: var(--radius-8);
-  overflow: hidden;
   margin-inline: auto;
-  max-width: 1100px;
-  min-height: 220px;
-  padding: var(--space-6);
+  min-height: 97px;
+  padding: 0;
+  width: 100%;
+}
+
+.canvasSidebarVisible {
+  max-width: 1110px;
+}
+
+.canvasSidebarHidden {
+  max-width: 1360px;
 }
 
 .canvasLight {
