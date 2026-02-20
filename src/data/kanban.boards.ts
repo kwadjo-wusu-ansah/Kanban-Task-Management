@@ -1,5 +1,5 @@
-import { typedKanbanDataset } from './designSystem.dataset'
-import type { BoardPreview, BoardSummary, DatasetBoard } from './designSystem.types'
+import { typedKanbanDataset } from './kanban.dataset'
+import type { BoardPreview, BoardSummary, DatasetBoard } from './kanban.types'
 
 const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae', '#f4f7fd']
 

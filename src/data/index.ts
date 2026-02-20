@@ -1,1 +1,1 @@
-export * from './designSystem'
+export * from './kanban'

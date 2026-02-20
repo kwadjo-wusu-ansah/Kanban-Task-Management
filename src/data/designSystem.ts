@@ -1,4 +1,2 @@
-export * from './designSystem.types'
-export * from './designSystem.tokens'
-export * from './designSystem.boards'
-export * from './designSystem.previews'
+// Backward-compatible alias for previous module name.
+export * from './kanban'

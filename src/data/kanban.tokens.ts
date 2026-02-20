@@ -1,4 +1,4 @@
-import type { ColorToken, TypographyToken } from './designSystem.types'
+import type { ColorToken, TypographyToken } from './kanban.types'
 
 export const colorTokens: ColorToken[] = [
   { name: 'Main Purple', hex: '#635FC7', rgb: '99, 95, 199', hsl: '242°, 48%, 58%' },

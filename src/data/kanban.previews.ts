@@ -1,5 +1,5 @@
-import { typedKanbanDataset } from './designSystem.dataset'
-import type { DatasetBoard, SubtaskPreview } from './designSystem.types'
+import { typedKanbanDataset } from './kanban.dataset'
+import type { DatasetBoard, SubtaskPreview } from './kanban.types'
 
 // Extracts a stable list of column names for dropdown preview data.
 function getUniqueColumnNames(boards: DatasetBoard[]): string[] {
