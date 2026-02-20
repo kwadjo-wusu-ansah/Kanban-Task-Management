@@ -15,12 +15,11 @@
 
 .canvas {
   border-radius: var(--radius-8);
-  display: grid;
-  gap: var(--space-4);
+  overflow: hidden;
   margin-inline: auto;
-  max-width: 360px;
-  min-height: 320px;
-  padding: var(--space-5);
+  max-width: 1100px;
+  min-height: 220px;
+  padding: var(--space-6);
 }
 
 .canvasLight {

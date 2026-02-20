@@ -55,6 +55,7 @@ This version is aligned to Figma board screens and the project local `data.json`
 ### Shell and Navigation
 - `AppShell`: shared desktop/mobile shell regions.
 - `Sidebar`: board list, create-board action, theme toggle, hide-sidebar action.
+- `Header`: board title, primary add-task button, and overflow action trigger with sidebar visibility variants.
 - `TopBar`: board title, add-task CTA, and overflow menu trigger.
 
 ### Board Rendering

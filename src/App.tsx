@@ -1,32 +1,33 @@
 import { useState } from 'react'
-import { Button, Tasks } from './components'
-import type { TaskCardMode, TasksItem } from './components'
+import { Button, Header } from './components'
+import type { HeaderMode } from './components'
 import { classNames } from './utils'
 import styles from './App.module.css'
 
-const previewTasks: TasksItem[] = [
-  { completedSubtaskCount: 2, id: 'build-ui', title: 'Build UI for onboarding flow', totalSubtaskCount: 5 },
-  { completedSubtaskCount: 0, id: 'audit-copy', title: 'Audit marketing copy and CTA hierarchy', totalSubtaskCount: 3 },
-  { completedSubtaskCount: 1, id: 'retro-notes', title: 'Write sprint retro notes', totalSubtaskCount: 1 },
-]
-
-// Renders a focused preview page for the reusable Tasks component.
+// Renders a focused preview page for the reusable Header component.
 function App() {
-  const [taskCardMode, setTaskCardMode] = useState<TaskCardMode>('light')
+  const [headerMode, setHeaderMode] = useState<HeaderMode>('light')
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true)
 
   return (
     <main className={styles.page}>
       <header className={styles.controls}>
-        <Button onClick={() => setTaskCardMode('light')} size="small" variant={taskCardMode === 'light' ? 'primary' : 'secondary'}>
-          Light Tasks
+        <Button onClick={() => setHeaderMode('light')} size="small" variant={headerMode === 'light' ? 'primary' : 'secondary'}>
+          Light Header
         </Button>
-        <Button onClick={() => setTaskCardMode('dark')} size="small" variant={taskCardMode === 'dark' ? 'primary' : 'secondary'}>
-          Dark Tasks
+        <Button onClick={() => setHeaderMode('dark')} size="small" variant={headerMode === 'dark' ? 'primary' : 'secondary'}>
+          Dark Header
+        </Button>
+        <Button onClick={() => setIsSidebarVisible(true)} size="small" variant={isSidebarVisible ? 'primary' : 'secondary'}>
+          Sidebar Showing
+        </Button>
+        <Button onClick={() => setIsSidebarVisible(false)} size="small" variant={!isSidebarVisible ? 'primary' : 'secondary'}>
+          Sidebar Hidden
         </Button>
       </header>
 
-      <section className={classNames(styles.canvas, taskCardMode === 'dark' ? styles.canvasDark : styles.canvasLight)}>
-        <Tasks accentColor="#49C4E5" heading="Todo" mode={taskCardMode} tasks={previewTasks} />
+      <section className={classNames(styles.canvas, headerMode === 'dark' ? styles.canvasDark : styles.canvasLight)}>
+        <Header boardName="Platform Launch" mode={headerMode} sidebarVisible={isSidebarVisible} />
       </section>
     </main>
   )

@@ -1,0 +1,111 @@
+.header {
+  align-items: center;
+  border-block-end: 1px solid transparent;
+  display: flex;
+  justify-content: space-between;
+  min-block-size: 97px;
+}
+
+.light {
+  background: var(--color-white);
+  border-block-end-color: var(--color-lines-light);
+}
+
+.dark {
+  background: var(--color-dark-grey);
+  border-block-end-color: var(--color-lines-dark);
+}
+
+.sidebarVisible {
+  padding-inline: var(--space-6);
+}
+
+.sidebarHidden {
+  padding-inline-end: var(--space-6);
+}
+
+.leadingGroup {
+  align-items: center;
+  display: flex;
+  min-inline-size: 0;
+}
+
+.logoSlot {
+  align-items: center;
+  block-size: 97px;
+  border-inline-end: 1px solid transparent;
+  display: flex;
+  inline-size: 300px;
+  padding-inline-start: 34px;
+}
+
+.light .logoSlot {
+  border-inline-end-color: var(--color-lines-light);
+}
+
+.dark .logoSlot {
+  border-inline-end-color: var(--color-lines-dark);
+}
+
+.logo {
+  block-size: 25px;
+  inline-size: 152.53px;
+}
+
+.title {
+  color: var(--color-black);
+  font-size: var(--text-heading-xl-size);
+  font-weight: 700;
+  line-height: var(--line-height-compact);
+  margin: 0;
+  overflow: hidden;
+  padding-inline-start: var(--space-6);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebarVisible .title {
+  padding-inline-start: 0;
+}
+
+.dark .title {
+  color: var(--color-white);
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-6);
+}
+
+.addTaskButton {
+  min-inline-size: 164px;
+}
+
+.menuButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  block-size: 24px;
+  color: var(--color-medium-grey);
+  cursor: pointer;
+  display: inline-flex;
+  inline-size: 24px;
+  justify-content: center;
+  padding: 0;
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.menuIcon {
+  block-size: 20px;
+  inline-size: 4.62px;
+}
+
+.menuButton:hover .menuIcon {
+  opacity: 0.7;
+}
