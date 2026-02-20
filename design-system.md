@@ -74,7 +74,7 @@ This version is aligned to Figma board screens and the project local `data.json`
 - `SelectField`: status dropdown with chevron icon.
 - `InputListField`: dynamic row list (subtasks/columns) with remove actions.
 - `SubtaskCheckbox`: checklist row for completed/active subtasks.
-- `Button`: primary/secondary/destructive variants with size support.
+- `Button`: primary/secondary/destructive variants with size and light/dark mode support.
 - `IconButton`: compact icon action trigger.
 
 ## Interaction and State Rules

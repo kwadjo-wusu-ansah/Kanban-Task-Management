@@ -32,13 +32,22 @@
   background-color: var(--color-primary-hover);
 }
 
-.secondary {
+.secondaryLight {
   background-color: rgba(99, 95, 199, 0.1);
   color: var(--color-primary);
 }
 
-.secondary:hover:not(:disabled) {
+.secondaryLight:hover:not(:disabled) {
   background-color: rgba(99, 95, 199, 0.25);
+}
+
+.secondaryDark {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+}
+
+.secondaryDark:hover:not(:disabled) {
+  background-color: var(--color-white);
 }
 
 .destructive {

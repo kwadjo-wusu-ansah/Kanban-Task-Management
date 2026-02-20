@@ -14,6 +14,18 @@
   width: 100%;
 }
 
+.panelDark {
+  background: var(--color-dark-grey);
+}
+
+.panelDark .title {
+  color: var(--color-white);
+}
+
+.panelDark .message {
+  color: var(--color-lines-light);
+}
+
 .title {
   color: var(--color-black);
   font-size: var(--text-heading-xl-size);
