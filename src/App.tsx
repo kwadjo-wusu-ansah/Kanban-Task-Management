@@ -118,11 +118,20 @@ function mapTaskSubtasksToViewModalItems(task: BoardTaskPreview): ModalItem[] {
   }))
 }
 
+// Maps board columns into editable modal rows.
+function mapBoardColumnsToEditableItems(board: BoardPreview): ModalItem[] {
+  return board.columns.map((column) => ({
+    id: column.id,
+    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
+    value: column.name,
+  }))
+}
+
 // Checks whether a board name already exists using a case-insensitive comparison.
-function hasDuplicateBoardName(boards: BoardPreview[], boardName: string): boolean {
+function hasDuplicateBoardName(boards: BoardPreview[], boardName: string, excludedBoardId?: string): boolean {
   const normalizedBoardName = boardName.trim().toLowerCase()
 
-  return boards.some((board) => board.name.trim().toLowerCase() === normalizedBoardName)
+  return boards.some((board) => board.id !== excludedBoardId && board.name.trim().toLowerCase() === normalizedBoardName)
 }
 
 const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
@@ -161,6 +170,15 @@ function App() {
   const [addBoardNameError, setAddBoardNameError] = useState('')
   const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
 
+  const [isBoardMenuOpen, setIsBoardMenuOpen] = useState(false)
+
+  const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false)
+  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
+  const [editBoardName, setEditBoardName] = useState('')
+  const [editBoardNameError, setEditBoardNameError] = useState('')
+  const [editBoardColumns, setEditBoardColumns] = useState<ModalItem[]>([])
+  const [editBoardColumnsError, setEditBoardColumnsError] = useState('')
+
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
   const activeTask = getActiveTask(activeBoard, activeTaskId)
   const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
@@ -184,6 +202,15 @@ function App() {
     setAddBoardColumns(createInitialAddBoardColumns())
   }
 
+  // Resets local Edit Board form state and clears validation feedback.
+  function resetEditBoardForm() {
+    setEditingBoardId(null)
+    setEditBoardName('')
+    setEditBoardNameError('')
+    setEditBoardColumns([])
+    setEditBoardColumnsError('')
+  }
+
   // Handles sidebar board changes and closes all open task modals and menus.
   function handleBoardSelect(nextBoardId: string) {
     const nextBoard = getActiveBoard(boardsData, nextBoardId)
@@ -202,8 +229,13 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
+    setIsBoardMenuOpen(false)
+
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -220,6 +252,14 @@ function App() {
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
+
+    setIsBoardMenuOpen(false)
+
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
+
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
 
     setActiveTaskId(nextTask.id)
     setIsTaskMenuOpen(false)
@@ -242,8 +282,13 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
+    setIsBoardMenuOpen(false)
+
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
 
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
@@ -261,6 +306,11 @@ function App() {
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
+
+    setIsBoardMenuOpen(false)
+
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
 
     setIsAddBoardModalOpen(true)
     resetAddBoardForm()
@@ -283,6 +333,57 @@ function App() {
   function handleAddBoardModalClose() {
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+  }
+
+  // Toggles the header board-action menu.
+  function handleBoardMenuToggle() {
+    setIsBoardMenuOpen((previousMenuState) => !previousMenuState)
+  }
+
+  // Closes the header board-action menu.
+  function handleBoardMenuClose() {
+    setIsBoardMenuOpen(false)
+  }
+
+  // Handles unimplemented Delete Board menu action by closing the menu.
+  function handleBoardDeleteAction() {
+    setIsBoardMenuOpen(false)
+  }
+
+  // Opens Edit Board modal from the header board-action menu and pre-fills form fields.
+  function handleEditBoardOpen() {
+    if (!activeBoard) {
+      return
+    }
+
+    setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+
+    setIsAddTaskModalOpen(false)
+    setIsAddStatusMenuOpen(false)
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
+
+    setIsBoardMenuOpen(false)
+
+    setEditingBoardId(activeBoard.id)
+    setEditBoardName(activeBoard.name)
+    setEditBoardNameError('')
+    setEditBoardColumns(mapBoardColumnsToEditableItems(activeBoard))
+    setEditBoardColumnsError('')
+    setIsEditBoardModalOpen(true)
+  }
+
+  // Closes the Edit Board modal and clears its local form state.
+  function handleEditBoardModalClose() {
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
   }
 
   // Toggles a subtask checkbox locally inside the open view-task modal.
@@ -324,8 +425,13 @@ function App() {
     setIsViewStatusMenuOpen(false)
     setActiveTaskId(null)
 
+    setIsBoardMenuOpen(false)
+
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
+
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
   }
 
   // Handles unimplemented Delete Task menu action by closing the menu.
@@ -488,6 +594,113 @@ function App() {
     resetAddBoardForm()
   }
 
+  // Updates the Edit Board name field and clears validation once the value changes.
+  function handleEditBoardNameChange(nextName: string) {
+    setEditBoardName(nextName)
+
+    if (editBoardNameError) {
+      setEditBoardNameError('')
+    }
+  }
+
+  // Adds a new blank column row to the Edit Board form.
+  function handleEditBoardColumnAdd() {
+    setEditBoardColumns((previousColumns) => [...previousColumns, createEmptyBoardColumnItem()])
+
+    if (editBoardColumnsError) {
+      setEditBoardColumnsError('')
+    }
+  }
+
+  // Removes a column row from the Edit Board form by row ID.
+  function handleEditBoardColumnRemove(columnId: string) {
+    setEditBoardColumns((previousColumns) => previousColumns.filter((column) => column.id !== columnId))
+
+    if (editBoardColumnsError) {
+      setEditBoardColumnsError('')
+    }
+  }
+
+  // Updates one column row value in the Edit Board form.
+  function handleEditBoardColumnValueChange(columnId: string, nextValue: string) {
+    setEditBoardColumns((previousColumns) =>
+      previousColumns.map((column) => (column.id === columnId ? { ...column, value: nextValue } : column)),
+    )
+
+    if (editBoardColumnsError) {
+      setEditBoardColumnsError('')
+    }
+  }
+
+  // Saves board edits and moves tasks from removed columns into the first remaining column.
+  function handleSaveBoardChanges() {
+    if (!editingBoardId) {
+      return
+    }
+
+    const boardToEdit = boardsData.find((board) => board.id === editingBoardId)
+
+    if (!boardToEdit) {
+      return
+    }
+
+    const normalizedBoardName = editBoardName.trim()
+
+    if (normalizedBoardName.length === 0) {
+      setEditBoardNameError("Can't be empty")
+      return
+    }
+
+    if (hasDuplicateBoardName(boardsData, normalizedBoardName, editingBoardId)) {
+      setEditBoardNameError('Board name already exists')
+      return
+    }
+
+    const normalizedColumns = editBoardColumns
+      .map((column) => ({
+        id: column.id,
+        name: column.value.trim(),
+      }))
+      .filter((column) => column.name.length > 0)
+
+    const hasTasks = boardToEdit.columns.some((column) => column.tasks.length > 0)
+
+    if (normalizedColumns.length === 0 && hasTasks) {
+      setEditBoardColumnsError('Keep at least one column while this board has tasks')
+      return
+    }
+
+    const existingColumnsById = new Map(boardToEdit.columns.map((column) => [column.id, column]))
+    const retainedColumnIds = new Set(normalizedColumns.map((column) => column.id).filter((columnId) => existingColumnsById.has(columnId)))
+    const movedTasks = boardToEdit.columns.filter((column) => !retainedColumnIds.has(column.id)).flatMap((column) => column.tasks)
+
+    const updatedColumns = normalizedColumns.map((column, columnIndex) => {
+      const existingColumn = existingColumnsById.get(column.id)
+      const baseTasks = existingColumn?.tasks ?? []
+      const columnTasks = columnIndex === 0 ? [...baseTasks, ...movedTasks] : baseTasks
+
+      return {
+        accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
+        id: existingColumn?.id ?? createClientId('column'),
+        name: column.name,
+        tasks: columnTasks.map((task) => ({
+          ...task,
+          status: column.name,
+        })),
+      }
+    })
+
+    const updatedBoard: BoardPreview = {
+      ...boardToEdit,
+      columns: updatedColumns,
+      name: normalizedBoardName,
+    }
+
+    setBoardsData((previousBoards) => previousBoards.map((board) => (board.id === editingBoardId ? updatedBoard : board)))
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
+  }
+
   // Adds a new blank subtask row in Edit Task form.
   function handleEditTaskSubtaskAdd() {
     setEditTaskSubtasks((previousSubtasks) => [...previousSubtasks, createEmptySubtaskItem()])
@@ -605,7 +818,18 @@ function App() {
       />
 
       <div className={styles.contentArea}>
-        <Header boardName={activeBoardName} isAddTaskDisabled={!hasColumns} mode={mode} onAddTask={handleAddTaskOpen} sidebarVisible={!isSidebarHidden} />
+        <Header
+          boardName={activeBoardName}
+          isAddTaskDisabled={!hasColumns}
+          isMenuOpen={isBoardMenuOpen}
+          mode={mode}
+          onAddTask={handleAddTaskOpen}
+          onDeleteBoard={handleBoardDeleteAction}
+          onEditBoard={handleEditBoardOpen}
+          onMenuClose={handleBoardMenuClose}
+          onMenuOpen={handleBoardMenuToggle}
+          sidebarVisible={!isSidebarHidden}
+        />
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
           {hasColumns ? (
             <div className={styles.columnsScroller}>
@@ -713,6 +937,23 @@ function App() {
           onColumnValueChange={handleAddBoardColumnValueChange}
           onPrimaryAction={handleCreateBoard}
           variant="addBoard"
+        />
+      ) : null}
+
+      {isEditBoardModalOpen ? (
+        <Modal
+          boardNameErrorMessage={editBoardNameError}
+          boardNameValue={editBoardName}
+          columns={editBoardColumns}
+          columnsErrorMessage={editBoardColumnsError}
+          mode={mode}
+          onAddColumn={handleEditBoardColumnAdd}
+          onBoardNameChange={(event) => handleEditBoardNameChange(event.target.value)}
+          onClose={handleEditBoardModalClose}
+          onColumnRemove={handleEditBoardColumnRemove}
+          onColumnValueChange={handleEditBoardColumnValueChange}
+          onPrimaryAction={handleSaveBoardChanges}
+          variant="editBoard"
         />
       ) : null}
     </main>

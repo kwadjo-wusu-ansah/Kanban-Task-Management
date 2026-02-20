@@ -14,6 +14,7 @@ export interface ModalItem {
 export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   boardNameErrorMessage?: string
   boardNameValue?: string
+  columnsErrorMessage?: string
   columns?: ModalItem[]
   description?: string
   isPrimaryActionDisabled?: boolean

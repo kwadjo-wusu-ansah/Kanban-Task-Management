@@ -6,8 +6,12 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   addTaskLabel?: string
   boardName: string
   isAddTaskDisabled?: boolean
+  isMenuOpen?: boolean
   mode?: HeaderMode
   onAddTask?: () => void
+  onDeleteBoard?: () => void
+  onEditBoard?: () => void
+  onMenuClose?: () => void
   onMenuOpen?: () => void
   sidebarVisible?: boolean
 }

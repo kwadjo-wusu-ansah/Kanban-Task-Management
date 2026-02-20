@@ -127,6 +127,7 @@ function Modal({
   boardNameErrorMessage,
   boardNameValue = 'Platform Launch',
   className,
+  columnsErrorMessage,
   columns = DEFAULT_BOARD_COLUMNS,
   description,
   isPrimaryActionDisabled = false,
@@ -176,7 +177,7 @@ function Modal({
   const resolvedDescription = description ?? getFallbackDescription(variant)
   const resolvedPrimaryActionLabel = primaryActionLabel ?? getPrimaryActionLabel(variant)
   const resolvedTaskFormSubtasks = subtasks.length > 0 ? subtasks : DEFAULT_FORM_SUBTASKS
-  const resolvedBoardColumns = columns.length > 0 ? columns : DEFAULT_BOARD_COLUMNS
+  const resolvedBoardColumns = columns
   const resolvedTaskTitleValue = taskTitleValue ?? getFallbackTaskTitleValue(variant)
   const resolvedTaskDescriptionValue = taskDescriptionValue ?? getFallbackTaskDescriptionValue(variant)
   const completedSubtaskCount = subtasks.filter((item) => item.checked).length
@@ -369,6 +370,7 @@ function Modal({
                   </div>
                 ))}
               </div>
+              {columnsErrorMessage ? <span className={styles.sectionErrorMessage}>{columnsErrorMessage}</span> : null}
               <Button className={styles.fullWidthButton} mode={mode} onClick={onAddColumn} size="small" variant="secondary">
                 + Add New Column
               </Button>

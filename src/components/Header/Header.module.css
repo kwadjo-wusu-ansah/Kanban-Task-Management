@@ -85,6 +85,10 @@
   min-inline-size: 164px;
 }
 
+.menuRegion {
+  position: relative;
+}
+
 .menuButton {
   align-items: center;
   background: transparent;
@@ -110,4 +114,41 @@
 
 .menuButton:hover .menuIcon {
   opacity: 0.7;
+}
+
+.menu {
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  display: grid;
+  gap: var(--space-4);
+  inline-size: 192px;
+  inset-block-start: calc(100% + var(--space-4));
+  inset-inline-end: 0;
+  padding: var(--space-4);
+  position: absolute;
+  z-index: 4;
+}
+
+.light .menu {
+  background: var(--color-white);
+}
+
+.dark .menu {
+  background: var(--color-very-dark-grey);
+}
+
+.menuAction {
+  background: transparent;
+  border: 0;
+  color: var(--color-medium-grey);
+  cursor: pointer;
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  padding: 0;
+  text-align: left;
+}
+
+.menuActionDanger {
+  color: var(--color-red);
 }
