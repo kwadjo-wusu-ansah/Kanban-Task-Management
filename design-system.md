@@ -69,6 +69,7 @@ This version is aligned to Figma board screens and the project local `data.json`
 - `ConfirmDialog`: reusable destructive confirmation content.
 
 ### Form Controls
+- `Input`: unified checkbox, text field, and dropdown primitive with mode and state support.
 - `TextField`: single-line input with error state.
 - `TextAreaField`: multiline description input with error state.
 - `SelectField`: status dropdown with chevron icon.
