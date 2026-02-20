@@ -1,37 +1,67 @@
-.page {
-  background: var(--color-light-grey);
+.app {
+  display: flex;
   min-height: 100vh;
-  padding: var(--space-8) var(--space-4);
+  width: 100%;
+  overflow: hidden;
 }
 
-.controls {
+.appLight {
+  background: var(--color-light-grey);
+}
+
+.appDark {
+  background: var(--color-very-dark-grey);
+}
+
+.contentArea {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+  min-height: 100vh;
+}
+
+.boardCanvas {
+  display: block;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--space-6);
+}
+
+.boardCanvasLight {
+  background: var(--color-light-grey);
+}
+
+.boardCanvasDark {
+  background: var(--color-very-dark-grey);
+}
+
+.emptyStateWrapper {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
   justify-content: center;
-  margin: 0 auto var(--space-8);
+  min-block-size: 100%;
+  padding: var(--space-8);
 }
 
-.canvas {
-  margin-inline: auto;
-  min-height: 97px;
-  padding: 0;
-  width: 100%;
+.columnsScroller {
+  display: grid;
+  gap: var(--space-6);
+  grid-auto-columns: max-content;
+  grid-auto-flow: column;
+  inline-size: max-content;
+  min-block-size: 100%;
 }
 
-.canvasSidebarVisible {
-  max-width: 1110px;
+.addColumnLane {
+  align-self: stretch;
+  display: flex;
+  min-block-size: calc(100vh - 145px);
+  min-inline-size: 280px;
+  padding-block-start: 39px;
 }
 
-.canvasSidebarHidden {
-  max-width: 1360px;
-}
-
-.canvasLight {
-  background: var(--color-light-grey);
-}
-
-.canvasDark {
-  background: var(--color-very-dark-grey);
+.addColumnLane > * {
+  min-block-size: 100%;
 }

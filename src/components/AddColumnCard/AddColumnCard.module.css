@@ -1,0 +1,36 @@
+.card {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-6);
+  cursor: pointer;
+  display: flex;
+  inline-size: 280px;
+  justify-content: center;
+  min-block-size: 100%;
+  padding: var(--space-6);
+}
+
+.light {
+  background: linear-gradient(180deg, rgba(232, 239, 250, 0.5) 0%, rgba(232, 239, 250, 0.25) 100%);
+}
+
+.dark {
+  background: linear-gradient(180deg, rgba(43, 44, 55, 0.5) 0%, rgba(43, 44, 55, 0.25) 100%);
+}
+
+.label {
+  color: var(--color-medium-grey);
+  font-size: var(--text-heading-xl-size);
+  font-weight: 700;
+  line-height: var(--line-height-compact);
+}
+
+.card:hover .label {
+  color: var(--color-primary);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

@@ -46,6 +46,26 @@ export interface BoardSummary {
   taskCount: number
 }
 
+export interface BoardTaskPreview {
+  completedSubtaskCount: number
+  id: string
+  title: string
+  totalSubtaskCount: number
+}
+
+export interface BoardColumnPreview {
+  accentColor: string
+  id: string
+  name: string
+  tasks: BoardTaskPreview[]
+}
+
+export interface BoardPreview {
+  columns: BoardColumnPreview[]
+  id: string
+  name: string
+}
+
 export interface SubtaskPreview {
   label: string
   checked: boolean
@@ -53,6 +73,7 @@ export interface SubtaskPreview {
 }
 
 const typedKanbanDataset = kanbanDataset as KanbanDataset
+const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae', '#f4f7fd']
 
 export const colorTokens: ColorToken[] = [
   { name: 'Main Purple', hex: '#635FC7', rgb: '99, 95, 199', hsl: '242°, 48%, 58%' },
@@ -136,11 +157,40 @@ function buildSubtaskStatePreviews(fallbackTaskTitle: string, boards: DatasetBoa
   ]
 }
 
+// Normalizes a display label into a stable ID-safe slug.
+function toId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// Builds typed board/column/task view models used by board-page UI composition.
+function buildBoardPreviews(boards: DatasetBoard[]): BoardPreview[] {
+  return boards.map((board, boardIndex) => ({
+    columns: board.columns.map((column, columnIndex) => ({
+      accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
+      id: `${toId(board.name)}-${toId(column.name)}-${columnIndex}`,
+      name: column.name,
+      tasks: column.tasks.map((task, taskIndex) => ({
+        completedSubtaskCount: task.subtasks.filter((subtask) => subtask.isCompleted).length,
+        id: `${toId(column.name)}-${toId(task.title)}-${taskIndex}`,
+        title: task.title,
+        totalSubtaskCount: task.subtasks.length,
+      })),
+    })),
+    id: `${toId(board.name)}-${boardIndex}`,
+    name: board.name,
+  }))
+}
+
 const boardSummaries = buildBoardSummaries(typedKanbanDataset.boards)
 const firstTask = typedKanbanDataset.boards[0]?.columns.find((column) => column.tasks.length > 0)?.tasks[0]
 
 export { boardSummaries }
 
+export const boardPreviews = buildBoardPreviews(typedKanbanDataset.boards)
 export const sampleTaskTitle = firstTask?.title ?? 'Building a slideshow'
 export const dropdownOptions = getUniqueColumnNames(typedKanbanDataset.boards)
 export const subtaskStates = buildSubtaskStatePreviews(sampleTaskTitle, typedKanbanDataset.boards)

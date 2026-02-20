@@ -1,0 +1,27 @@
+.root {
+  display: grid;
+  gap: var(--space-6);
+  justify-items: center;
+  max-inline-size: 500px;
+  text-align: center;
+}
+
+.light {
+  color: var(--color-black);
+}
+
+.dark {
+  color: var(--color-white);
+}
+
+.message {
+  color: var(--color-medium-grey);
+  font-size: var(--text-heading-l-size);
+  font-weight: 700;
+  line-height: 23px;
+  margin: 0;
+}
+
+.actionButton {
+  min-inline-size: 174px;
+}
