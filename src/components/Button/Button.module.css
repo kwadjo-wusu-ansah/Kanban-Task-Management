@@ -28,7 +28,8 @@
   color: var(--color-white);
 }
 
-.primary:hover:not(:disabled) {
+.primary:hover:not(:disabled),
+.primary:active:not(:disabled) {
   background-color: var(--color-primary-hover);
 }
 
@@ -37,7 +38,8 @@
   color: var(--color-primary);
 }
 
-.secondaryLight:hover:not(:disabled) {
+.secondaryLight:hover:not(:disabled),
+.secondaryLight:active:not(:disabled) {
   background-color: rgba(99, 95, 199, 0.25);
 }
 
@@ -46,7 +48,8 @@
   color: var(--color-primary);
 }
 
-.secondaryDark:hover:not(:disabled) {
+.secondaryDark:hover:not(:disabled),
+.secondaryDark:active:not(:disabled) {
   background-color: var(--color-white);
 }
 
@@ -55,7 +58,8 @@
   color: var(--color-white);
 }
 
-.destructive:hover:not(:disabled) {
+.destructive:hover:not(:disabled),
+.destructive:active:not(:disabled) {
   background-color: var(--color-red-hover);
 }
 

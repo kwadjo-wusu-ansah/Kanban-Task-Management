@@ -197,6 +197,10 @@
   background: var(--color-primary-hover);
 }
 
+.showButton:active {
+  background: var(--color-primary-hover);
+}
+
 .showIcon {
   block-size: 10.22px;
   inline-size: 16px;
