@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { iconCheck, iconChevronDown } from '../../assets'
 import { classNames } from '../../utils'
 import styles from './Input.module.css'
@@ -11,7 +12,7 @@ import {
   resolveDropdownDisplayValue,
 } from './Input.utils'
 
-// Renders checkbox input rows with dark-mode idle, hover, and active visuals.
+// Renders checkbox input rows with mode-aware idle, hover, and active visuals.
 function renderCheckboxInput({
   checkboxLabel,
   checked,
@@ -43,7 +44,7 @@ function renderCheckboxInput({
   )
 }
 
-// Renders text field rows with dark-mode idle, active, and error visuals.
+// Renders text field rows with mode-aware idle, active, and error visuals.
 function renderTextFieldInput({
   className,
   errorMessage,
@@ -85,7 +86,7 @@ function renderTextFieldInput({
   )
 }
 
-// Renders dropdown rows with dark-mode idle, active, and menu-open visuals.
+// Renders dropdown rows with mode-aware idle, active, and menu-open visuals.
 function renderDropdownInput({
   className,
   dropdownLabel,
@@ -131,8 +132,28 @@ function renderDropdownInput({
 
 // Renders a unified input primitive for checkbox, text field, and dropdown controls.
 function Input(props: InputProps) {
+  const [uncontrolledCheckboxChecked, setUncontrolledCheckboxChecked] = useState(false)
+
   if (props.variant === 'checkbox') {
-    return renderCheckboxInput(props)
+    const isControlled = typeof props.checked === 'boolean'
+    const resolvedChecked = isControlled ? props.checked : props.state === 'active' || uncontrolledCheckboxChecked
+
+    const handleCheckboxChange: CheckboxInputProps['onCheckboxChange'] = (event) => {
+      if (!isControlled) {
+        setUncontrolledCheckboxChecked(event.target.checked)
+      }
+
+      props.onCheckboxChange?.(event)
+    }
+
+    const resolvedCheckboxChangeHandler =
+      !isControlled || props.onCheckboxChange ? handleCheckboxChange : props.onCheckboxChange
+
+    return renderCheckboxInput({
+      ...props,
+      checked: resolvedChecked,
+      onCheckboxChange: resolvedCheckboxChangeHandler,
+    })
   }
 
   if (props.variant === 'textField') {

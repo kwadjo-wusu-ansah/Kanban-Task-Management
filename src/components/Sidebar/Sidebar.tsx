@@ -1,0 +1,111 @@
+import {
+  iconBoard,
+  iconBoardPurple,
+  iconBoardWhite,
+  iconDarkTheme,
+  iconHideSidebar,
+  iconLightTheme,
+  iconShowSidebar,
+  logoDark,
+  logoLight,
+} from '../../assets'
+import { classNames } from '../../utils'
+import styles from './Sidebar.module.css'
+import type { SidebarBoard, SidebarProps } from './Sidebar.types'
+
+// Resolves the board counter value shown in the "ALL BOARDS" heading.
+function getBoardCount(boardCount: number | undefined, boards: SidebarBoard[]): number {
+  return typeof boardCount === 'number' ? boardCount : boards.length
+}
+
+// Resolves each board-row icon source by active and create-row states.
+function getBoardIconSource(isActive: boolean, isCreateRow: boolean): string {
+  if (isActive) {
+    return iconBoardWhite
+  }
+
+  if (isCreateRow) {
+    return iconBoardPurple
+  }
+
+  return iconBoard
+}
+
+// Renders a reusable sidebar with light/dark surfaces and hide/show behavior.
+function Sidebar({
+  activeBoardId,
+  boardCount,
+  boards,
+  className,
+  hidden = false,
+  mode = 'light',
+  onBoardSelect,
+  onCreateBoard,
+  onHideSidebar,
+  onShowSidebar,
+  onThemeToggle,
+  theme = 'light',
+}: SidebarProps) {
+  const resolvedBoardCount = getBoardCount(boardCount, boards)
+  const logoSource = mode === 'dark' ? logoLight : logoDark
+  const isDarkTheme = theme === 'dark'
+
+  if (hidden) {
+    return (
+      <button aria-label="Show sidebar" className={styles.showButton} onClick={onShowSidebar} type="button">
+        <img alt="" aria-hidden="true" className={styles.showIcon} src={iconShowSidebar} />
+      </button>
+    )
+  }
+
+  return (
+    <aside className={classNames(styles.sidebar, mode === 'dark' ? styles.dark : styles.light, className)}>
+      <img alt="Kanban" className={styles.logo} src={logoSource} />
+
+      <section className={styles.boardsGroup}>
+        <span className={styles.boardsLabel}>ALL BOARDS ({resolvedBoardCount})</span>
+        <ul className={styles.boardsList}>
+          {boards.map((board) => {
+            const isActive = board.id === activeBoardId
+
+            return (
+              <li key={board.id}>
+                <button
+                  className={classNames(styles.boardItemButton, isActive && styles.boardItemActive)}
+                  onClick={() => onBoardSelect?.(board.id)}
+                  type="button"
+                >
+                  <img alt="" aria-hidden="true" className={styles.boardIcon} src={getBoardIconSource(isActive, false)} />
+                  <span className={styles.boardName}>{board.name}</span>
+                </button>
+              </li>
+            )
+          })}
+          <li>
+            <button className={classNames(styles.boardItemButton, styles.createBoardButton)} onClick={onCreateBoard} type="button">
+              <img alt="" aria-hidden="true" className={styles.boardIcon} src={getBoardIconSource(false, true)} />
+              <span className={styles.boardName}>+ Create New Board</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <div className={styles.bottomSection}>
+        <div className={classNames(styles.themeToggle, mode === 'dark' ? styles.themeToggleDark : styles.themeToggleLight)}>
+          <img alt="" aria-hidden="true" className={styles.themeIcon} src={iconLightTheme} />
+          <button aria-label="Toggle theme" className={styles.themeSwitch} onClick={onThemeToggle} type="button">
+            <span className={classNames(styles.themeSwitchThumb, isDarkTheme && styles.themeSwitchThumbDark)} />
+          </button>
+          <img alt="" aria-hidden="true" className={styles.themeIcon} src={iconDarkTheme} />
+        </div>
+
+        <button className={styles.hideButton} onClick={onHideSidebar} type="button">
+          <img alt="" aria-hidden="true" className={styles.hideIcon} src={iconHideSidebar} />
+          <span>Hide Sidebar</span>
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+export default Sidebar

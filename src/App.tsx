@@ -1,61 +1,53 @@
-import { Input } from './components'
+import { useState } from 'react'
+import { Button, Sidebar } from './components'
+import type { SidebarBoard, SidebarMode, SidebarTheme } from './components'
 import styles from './App.module.css'
 
-const statusOptions = [
-  { label: 'Todo', value: 'Todo' },
-  { label: 'Doing', value: 'Doing' },
-  { label: 'Done', value: 'Done' },
+const previewBoards: SidebarBoard[] = [
+  { id: 'platform-launch', name: 'Platform Launch' },
+  { id: 'marketing-plan', name: 'Marketing Plan' },
+  { id: 'roadmap', name: 'Roadmap' },
 ]
 
-// Renders a dark-mode preview for reusable input variants.
+// Renders a focused preview page for the reusable Sidebar component.
 function App() {
+  const [activeBoardId, setActiveBoardId] = useState('platform-launch')
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false)
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('light')
+  const [sidebarTheme, setSidebarTheme] = useState<SidebarTheme>('light')
+
   return (
     <main className={styles.page}>
-      <section className={`${styles.panel} ${styles.panelDark}`}>
-        <h1 className={styles.title}>Input (Dark Mode)</h1>
-        <p className={styles.message}>Checkbox, text field, and dropdown states from the dark design system.</p>
-        <div className={styles.previewGrid}>
-          <div className={styles.previewColumn}>
-            <h2 className={styles.sectionTitle}>Checkbox</h2>
-            <div className={styles.previewStack}>
-              <Input checkboxLabel="Idle" mode="dark" state="idle" variant="checkbox" />
-              <Input checkboxLabel="Hovered" mode="dark" state="hover" variant="checkbox" />
-              <Input checkboxLabel="Completed" mode="dark" state="active" variant="checkbox" />
-            </div>
-          </div>
+      <header className={styles.controls}>
+        <Button onClick={() => setSidebarMode('light')} size="small" variant={sidebarMode === 'light' ? 'primary' : 'secondary'}>
+          Light Sidebar
+        </Button>
+        <Button onClick={() => setSidebarMode('dark')} size="small" variant={sidebarMode === 'dark' ? 'primary' : 'secondary'}>
+          Dark Sidebar
+        </Button>
+        <Button
+          onClick={() => setIsSidebarHidden((previousHidden) => !previousHidden)}
+          size="small"
+          variant={isSidebarHidden ? 'primary' : 'secondary'}
+        >
+          {isSidebarHidden ? 'Show Sidebar' : 'Hide Sidebar'}
+        </Button>
+      </header>
 
-          <div className={styles.previewColumn}>
-            <h2 className={styles.sectionTitle}>Text Field</h2>
-            <div className={styles.previewStack}>
-              <Input fieldLabel="Text Field (Idle)" mode="dark" placeholder="Enter task name" state="idle" variant="textField" />
-              <Input fieldLabel="Text Field (Active)" mode="dark" state="active" value="Building a slideshow" variant="textField" />
-              <Input
-                errorMessage="Can’t be empty"
-                fieldLabel="Text Field (Error)"
-                mode="dark"
-                placeholder="Enter task name"
-                state="error"
-                variant="textField"
-              />
-            </div>
-          </div>
-
-          <div className={styles.previewColumn}>
-            <h2 className={styles.sectionTitle}>Dropdown</h2>
-            <div className={styles.previewStack}>
-              <Input dropdownLabel="Dropdown (Idle)" mode="dark" options={statusOptions} state="idle" value="Doing" variant="dropdown" />
-              <Input
-                dropdownLabel="Dropdown (Active)"
-                isMenuOpen
-                mode="dark"
-                options={statusOptions}
-                state="active"
-                value="Doing"
-                variant="dropdown"
-              />
-            </div>
-          </div>
-        </div>
+      <section className={styles.canvas}>
+        <Sidebar
+          activeBoardId={activeBoardId}
+          boardCount={sidebarMode === 'dark' ? 8 : 3}
+          boards={previewBoards}
+          hidden={isSidebarHidden}
+          mode={sidebarMode}
+          onBoardSelect={setActiveBoardId}
+          onCreateBoard={() => {}}
+          onHideSidebar={() => setIsSidebarHidden(true)}
+          onShowSidebar={() => setIsSidebarHidden(false)}
+          onThemeToggle={() => setSidebarTheme((previousTheme) => (previousTheme === 'dark' ? 'light' : 'dark'))}
+          theme={sidebarTheme}
+        />
       </section>
     </main>
   )

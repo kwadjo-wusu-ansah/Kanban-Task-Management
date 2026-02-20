@@ -19,7 +19,7 @@ export function getCheckboxStateClassName(
   isChecked: boolean,
   inputStyles: InputStyles,
 ): string {
-  if (isChecked || state === 'active') {
+  if (isChecked) {
     return inputStyles.checkboxActive
   }
 

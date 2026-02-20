@@ -21,16 +21,24 @@
   padding-inline: 12px;
 }
 
-.checkboxIdle {
+.darkMode.checkboxIdle {
   background: var(--color-very-dark-grey);
+}
+
+.lightMode.checkboxIdle {
+  background: var(--color-light-grey);
 }
 
 .checkboxHover {
   background: rgba(99, 95, 199, 0.25);
 }
 
-.checkboxActive {
+.darkMode.checkboxActive {
   background: var(--color-very-dark-grey);
+}
+
+.lightMode.checkboxActive {
+  background: var(--color-light-grey);
 }
 
 .checkboxControl:not(.checkboxActive):hover {
@@ -47,7 +55,6 @@
 
 .checkboxBox {
   align-items: center;
-  background: var(--color-dark-grey);
   border: 1px solid rgba(130, 143, 163, 0.25);
   border-radius: var(--radius-2);
   block-size: 16px;
@@ -55,23 +62,45 @@
   flex: 0 0 16px;
   justify-content: center;
   inline-size: 16px;
+  overflow: hidden;
+}
+
+.darkMode .checkboxBox {
+  background: var(--color-dark-grey);
+}
+
+.lightMode .checkboxBox {
+  background: var(--color-white);
 }
 
 .checkboxBoxChecked {
+  border-color: var(--color-primary);
+}
+
+.checkboxBox.checkboxBoxChecked {
   background: var(--color-primary);
   border-color: var(--color-primary);
 }
 
 .checkboxCheckIcon {
-  block-size: 6px;
-  inline-size: 8px;
+  block-size: 8px;
+  display: block;
+  inline-size: 10px;
+  object-fit: contain;
 }
 
 .checkboxText {
-  color: var(--color-white);
   font-size: var(--text-body-m-size);
   font-weight: 700;
   line-height: var(--line-height-compact);
+}
+
+.darkMode .checkboxText {
+  color: var(--color-white);
+}
+
+.lightMode .checkboxText {
+  color: var(--color-black);
 }
 
 .checkboxTextCompleted {
@@ -86,10 +115,17 @@
 }
 
 .fieldLabel {
-  color: var(--color-white);
   font-size: var(--text-body-m-size);
   font-weight: 700;
   line-height: var(--line-height-compact);
+}
+
+.darkMode .fieldLabel {
+  color: var(--color-white);
+}
+
+.lightMode .fieldLabel {
+  color: var(--color-medium-grey);
 }
 
 .textFieldWrap {
@@ -97,11 +133,9 @@
 }
 
 .textFieldControl {
-  background: var(--color-dark-grey);
   border: 1px solid rgba(130, 143, 163, 0.25);
   border-radius: var(--radius-4);
   block-size: 40px;
-  color: var(--color-white);
   font-size: var(--text-body-l-size);
   font-weight: 500;
   inline-size: 100%;
@@ -110,8 +144,22 @@
   padding-inline: var(--space-4);
 }
 
-.textFieldControl::placeholder {
+.darkMode .textFieldControl {
+  background: var(--color-dark-grey);
+  color: var(--color-white);
+}
+
+.lightMode .textFieldControl {
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
+.darkMode .textFieldControl::placeholder {
   color: rgba(255, 255, 255, 0.25);
+}
+
+.lightMode .textFieldControl::placeholder {
+  color: rgba(0, 1, 18, 0.25);
 }
 
 .textFieldControl:focus-visible {
@@ -123,7 +171,7 @@
 }
 
 .textFieldActive {
-  border-color: var(--color-primary);
+  border-color: rgba(130, 143, 163, 0.25);
 }
 
 .textFieldError {
@@ -153,11 +201,9 @@
 
 .dropdownControl {
   align-items: center;
-  background: var(--color-dark-grey);
   border: 1px solid rgba(130, 143, 163, 0.25);
   border-radius: var(--radius-4);
   block-size: 40px;
-  color: var(--color-white);
   cursor: pointer;
   display: flex;
   font-size: var(--text-body-l-size);
@@ -169,6 +215,16 @@
   text-align: left;
 }
 
+.darkMode .dropdownControl {
+  background: var(--color-dark-grey);
+  color: var(--color-white);
+}
+
+.lightMode .dropdownControl {
+  background: var(--color-white);
+  color: var(--color-black);
+}
+
 .dropdownIdle {
   border-color: rgba(130, 143, 163, 0.25);
 }
@@ -178,7 +234,7 @@
 }
 
 .dropdownValue {
-  color: var(--color-white);
+  color: inherit;
 }
 
 .dropdownChevronIcon {
@@ -187,7 +243,6 @@
 }
 
 .dropdownMenu {
-  background: var(--color-very-dark-grey);
   border-radius: var(--radius-8);
   box-shadow: var(--shadow-menu);
   display: grid;
@@ -199,6 +254,14 @@
   position: absolute;
   inset-inline-end: 0;
   z-index: 1;
+}
+
+.darkMode .dropdownMenu {
+  background: var(--color-very-dark-grey);
+}
+
+.lightMode .dropdownMenu {
+  background: var(--color-white);
 }
 
 .dropdownMenuOption {
