@@ -13,6 +13,9 @@ const fallbackBoards: SidebarBoard[] = [
 ]
 
 const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
+const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
+const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
+const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae', '#f4f7fd']
 
 let nextClientId = 0
 
@@ -31,9 +34,23 @@ function createEmptySubtaskItem(placeholder = 'e.g. New subtask'): ModalItem {
   }
 }
 
+// Creates a blank board-column form row with optional initial value.
+function createEmptyBoardColumnItem(value = ''): ModalItem {
+  return {
+    id: createClientId('board-column'),
+    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
+    value,
+  }
+}
+
 // Builds default Add Task subtask rows shown when the modal opens.
 function createInitialAddTaskSubtasks(): ModalItem[] {
   return DEFAULT_ADD_SUBTASK_PLACEHOLDERS.map((placeholder) => createEmptySubtaskItem(placeholder))
+}
+
+// Builds default Add Board column rows shown when the modal opens.
+function createInitialAddBoardColumns(): ModalItem[] {
+  return DEFAULT_ADD_BOARD_COLUMN_VALUES.map((value) => createEmptyBoardColumnItem(value))
 }
 
 // Maps task subtasks into editable modal rows while preserving completion state.
@@ -101,6 +118,13 @@ function mapTaskSubtasksToViewModalItems(task: BoardTaskPreview): ModalItem[] {
   }))
 }
 
+// Checks whether a board name already exists using a case-insensitive comparison.
+function hasDuplicateBoardName(boards: BoardPreview[], boardName: string): boolean {
+  const normalizedBoardName = boardName.trim().toLowerCase()
+
+  return boards.some((board) => board.name.trim().toLowerCase() === normalizedBoardName)
+}
+
 const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
 // Renders the desktop board app shell in populated and empty states for both themes.
@@ -132,11 +156,16 @@ function App() {
   const [editTaskStatusValue, setEditTaskStatusValue] = useState('')
   const [editTaskSubtasks, setEditTaskSubtasks] = useState<ModalItem[]>([])
 
+  const [isAddBoardModalOpen, setIsAddBoardModalOpen] = useState(false)
+  const [addBoardName, setAddBoardName] = useState('')
+  const [addBoardNameError, setAddBoardNameError] = useState('')
+  const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
+
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
   const activeTask = getActiveTask(activeBoard, activeTaskId)
   const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
   const hasColumns = (activeBoard?.columns.length ?? 0) > 0
-  const boardCount = mode === 'dark' ? 8 : 3
+  const boardCount = boards.length
   const statusOptions = buildStatusOptions(activeBoard)
 
   // Resets local Add Task form state to initial values for the active board.
@@ -146,6 +175,13 @@ function App() {
     setAddTaskStatusValue(initialStatusValue)
     setAddTaskSubtasks(createInitialAddTaskSubtasks())
     setIsAddStatusMenuOpen(false)
+  }
+
+  // Resets local Add Board form state to initial values.
+  function resetAddBoardForm() {
+    setAddBoardName('')
+    setAddBoardNameError('')
+    setAddBoardColumns(createInitialAddBoardColumns())
   }
 
   // Handles sidebar board changes and closes all open task modals and menus.
@@ -165,6 +201,9 @@ function App() {
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
+
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -203,8 +242,28 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
+
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
+  }
+
+  // Opens Add Board modal with a clean form and closes other task overlays.
+  function handleAddBoardOpen() {
+    setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+
+    setIsAddTaskModalOpen(false)
+    setIsAddStatusMenuOpen(false)
+
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+
+    setIsAddBoardModalOpen(true)
+    resetAddBoardForm()
   }
 
   // Closes the view-task modal and related menu/dropdown state.
@@ -218,6 +277,12 @@ function App() {
   function handleAddTaskModalClose() {
     setIsAddTaskModalOpen(false)
     setIsAddStatusMenuOpen(false)
+  }
+
+  // Closes the Add Board modal and clears board-name validation feedback.
+  function handleAddBoardModalClose() {
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
   }
 
   // Toggles a subtask checkbox locally inside the open view-task modal.
@@ -258,6 +323,9 @@ function App() {
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
     setActiveTaskId(null)
+
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
   }
 
   // Handles unimplemented Delete Task menu action by closing the menu.
@@ -357,6 +425,67 @@ function App() {
     setIsAddTaskModalOpen(false)
     setIsAddStatusMenuOpen(false)
     resetAddTaskForm(targetColumn.name)
+  }
+
+  // Updates the Add Board name field and clears validation once the value changes.
+  function handleAddBoardNameChange(nextName: string) {
+    setAddBoardName(nextName)
+
+    if (addBoardNameError) {
+      setAddBoardNameError('')
+    }
+  }
+
+  // Adds a new blank column row to the Add Board form.
+  function handleAddBoardColumnAdd() {
+    setAddBoardColumns((previousColumns) => [...previousColumns, createEmptyBoardColumnItem()])
+  }
+
+  // Removes a column row from the Add Board form by row ID.
+  function handleAddBoardColumnRemove(columnId: string) {
+    setAddBoardColumns((previousColumns) => previousColumns.filter((column) => column.id !== columnId))
+  }
+
+  // Updates one column row value in the Add Board form.
+  function handleAddBoardColumnValueChange(columnId: string, nextValue: string) {
+    setAddBoardColumns((previousColumns) =>
+      previousColumns.map((column) => (column.id === columnId ? { ...column, value: nextValue } : column)),
+    )
+  }
+
+  // Creates a new board locally, blocking duplicate board names and allowing empty column rows.
+  function handleCreateBoard() {
+    const normalizedBoardName = addBoardName.trim()
+
+    if (normalizedBoardName.length === 0) {
+      setAddBoardNameError("Can't be empty")
+      return
+    }
+
+    if (hasDuplicateBoardName(boardsData, normalizedBoardName)) {
+      setAddBoardNameError('Board name already exists')
+      return
+    }
+
+    const normalizedColumnNames = addBoardColumns
+      .map((column) => column.value.trim())
+      .filter((columnName) => columnName.length > 0)
+
+    const nextBoardId = createClientId('board')
+    const nextBoard: BoardPreview = {
+      columns: normalizedColumnNames.map((columnName, columnIndex) => ({
+        accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
+        id: `${nextBoardId}-column-${columnIndex}`,
+        name: columnName,
+        tasks: [],
+      })),
+      id: nextBoardId,
+      name: normalizedBoardName,
+    }
+
+    setBoardsData((previousBoards) => [...previousBoards, nextBoard])
+    setIsAddBoardModalOpen(false)
+    resetAddBoardForm()
   }
 
   // Adds a new blank subtask row in Edit Task form.
@@ -468,7 +597,7 @@ function App() {
         hidden={isSidebarHidden}
         mode={mode}
         onBoardSelect={handleBoardSelect}
-        onCreateBoard={() => {}}
+        onCreateBoard={handleAddBoardOpen}
         onHideSidebar={() => setIsSidebarHidden(true)}
         onShowSidebar={() => setIsSidebarHidden(false)}
         onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
@@ -568,6 +697,22 @@ function App() {
           taskDescriptionValue={editTaskDescription}
           taskTitleValue={editTaskTitle}
           variant="editTask"
+        />
+      ) : null}
+
+      {isAddBoardModalOpen ? (
+        <Modal
+          boardNameErrorMessage={addBoardNameError}
+          boardNameValue={addBoardName}
+          columns={addBoardColumns}
+          mode={mode}
+          onAddColumn={handleAddBoardColumnAdd}
+          onBoardNameChange={(event) => handleAddBoardNameChange(event.target.value)}
+          onClose={handleAddBoardModalClose}
+          onColumnRemove={handleAddBoardColumnRemove}
+          onColumnValueChange={handleAddBoardColumnValueChange}
+          onPrimaryAction={handleCreateBoard}
+          variant="addBoard"
         />
       ) : null}
     </main>

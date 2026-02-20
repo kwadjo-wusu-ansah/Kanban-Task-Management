@@ -124,6 +124,7 @@ function resolveStatusOptions(
 
 // Renders a reusable modal shell with light/dark modes and seven modal variants.
 function Modal({
+  boardNameErrorMessage,
   boardNameValue = 'Platform Launch',
   className,
   columns = DEFAULT_BOARD_COLUMNS,
@@ -134,8 +135,10 @@ function Modal({
   mode = 'light',
   onAddColumn,
   onAddSubtask,
+  onBoardNameChange,
   onClose,
   onColumnRemove,
+  onColumnValueChange,
   onDeleteTask,
   onEditTask,
   onMenuOpen,
@@ -331,7 +334,16 @@ function Modal({
 
         {isBoardFormVariant ? (
           <div className={styles.fieldStack}>
-            <Input fieldLabel="Board Name" mode={mode} state="idle" value={boardNameValue} variant="textField" />
+            <Input
+              errorMessage={boardNameErrorMessage}
+              fieldLabel="Board Name"
+              mode={mode}
+              onTextChange={onBoardNameChange}
+              placeholder="e.g. Web Design"
+              state={boardNameErrorMessage ? 'error' : 'idle'}
+              value={boardNameValue}
+              variant="textField"
+            />
             <div className={styles.sectionGroup}>
               <span className={styles.sectionLabel}>Board Columns</span>
               <div className={styles.editableList}>
@@ -340,6 +352,7 @@ function Modal({
                     <Input
                       className={styles.editableInput}
                       mode={mode}
+                      onTextChange={(event) => onColumnValueChange?.(column.id, event.target.value)}
                       placeholder={column.placeholder}
                       state="idle"
                       value={column.value}

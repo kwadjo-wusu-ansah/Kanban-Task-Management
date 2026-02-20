@@ -12,6 +12,7 @@ export interface ModalItem {
 }
 
 export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
+  boardNameErrorMessage?: string
   boardNameValue?: string
   columns?: ModalItem[]
   description?: string
@@ -21,8 +22,10 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   mode?: ModalMode
   onAddColumn?: () => void
   onAddSubtask?: () => void
+  onBoardNameChange?: ChangeEventHandler<HTMLInputElement>
   onClose?: () => void
   onColumnRemove?: (columnId: string) => void
+  onColumnValueChange?: (columnId: string, nextValue: string) => void
   onDeleteTask?: () => void
   onEditTask?: () => void
   onMenuOpen?: () => void
