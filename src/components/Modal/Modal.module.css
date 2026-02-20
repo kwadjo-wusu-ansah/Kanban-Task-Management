@@ -89,6 +89,8 @@
 }
 
 .menuRegion {
+  display: flex;
+  justify-content: flex-end;
   position: relative;
 }
 
@@ -106,10 +108,10 @@
   border-radius: var(--radius-8);
   box-shadow: var(--shadow-menu);
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-4);
   inset-block-start: calc(100% + var(--space-2));
-  inset-inline-end: 0;
-  min-inline-size: 192px;
+  inset-inline-end: -96px;
+  inline-size: 192px;
   padding: var(--space-4);
   position: absolute;
   z-index: 3;
@@ -276,5 +278,9 @@
 
   .buttonRow {
     flex-direction: column;
+  }
+
+  .taskMenu {
+    inset-inline-end: 0;
   }
 }
