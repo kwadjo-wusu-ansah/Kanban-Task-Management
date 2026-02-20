@@ -76,6 +76,10 @@
   color: var(--color-red);
 }
 
+.panelDark .titleDanger {
+  color: var(--color-red);
+}
+
 .menuButton {
   align-items: center;
   background: transparent;

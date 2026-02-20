@@ -134,6 +134,11 @@ function hasDuplicateBoardName(boards: BoardPreview[], boardName: string, exclud
   return boards.some((board) => board.id !== excludedBoardId && board.name.trim().toLowerCase() === normalizedBoardName)
 }
 
+// Builds delete-board confirmation copy that includes the target board name.
+function buildDeleteBoardDescription(boardName: string): string {
+  return `Are you sure you want to delete the '${boardName}' board? This action will remove all columns and tasks and cannot be reversed.`
+}
+
 const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
 // Renders the desktop board app shell in populated and empty states for both themes.
@@ -179,12 +184,17 @@ function App() {
   const [editBoardColumns, setEditBoardColumns] = useState<ModalItem[]>([])
   const [editBoardColumnsError, setEditBoardColumnsError] = useState('')
 
+  const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false)
+  const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null)
+  const [deletingBoardName, setDeletingBoardName] = useState('')
+
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
   const activeTask = getActiveTask(activeBoard, activeTaskId)
   const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
   const hasColumns = (activeBoard?.columns.length ?? 0) > 0
   const boardCount = boards.length
   const statusOptions = buildStatusOptions(activeBoard)
+  const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
@@ -209,6 +219,13 @@ function App() {
     setEditBoardNameError('')
     setEditBoardColumns([])
     setEditBoardColumnsError('')
+  }
+
+  // Resets local Delete Board modal state.
+  function resetDeleteBoardState() {
+    setIsDeleteBoardModalOpen(false)
+    setDeletingBoardId(null)
+    setDeletingBoardName('')
   }
 
   // Handles sidebar board changes and closes all open task modals and menus.
@@ -236,6 +253,8 @@ function App() {
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
+
+    resetDeleteBoardState()
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -260,6 +279,8 @@ function App() {
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
+
+    resetDeleteBoardState()
 
     setActiveTaskId(nextTask.id)
     setIsTaskMenuOpen(false)
@@ -290,6 +311,8 @@ function App() {
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
 
+    resetDeleteBoardState()
+
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
   }
@@ -311,6 +334,8 @@ function App() {
 
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
+
+    resetDeleteBoardState()
 
     setIsAddBoardModalOpen(true)
     resetAddBoardForm()
@@ -335,6 +360,11 @@ function App() {
     setAddBoardNameError('')
   }
 
+  // Closes the Delete Board modal.
+  function handleDeleteBoardModalClose() {
+    resetDeleteBoardState()
+  }
+
   // Toggles the header board-action menu.
   function handleBoardMenuToggle() {
     setIsBoardMenuOpen((previousMenuState) => !previousMenuState)
@@ -345,9 +375,19 @@ function App() {
     setIsBoardMenuOpen(false)
   }
 
-  // Handles unimplemented Delete Board menu action by closing the menu.
+  // Opens the Delete Board modal from the header board-action menu.
   function handleBoardDeleteAction() {
+    if (!activeBoard) {
+      setIsBoardMenuOpen(false)
+      return
+    }
+
     setIsBoardMenuOpen(false)
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
+    setIsDeleteBoardModalOpen(true)
+    setDeletingBoardId(activeBoard.id)
+    setDeletingBoardName(activeBoard.name)
   }
 
   // Opens Edit Board modal from the header board-action menu and pre-fills form fields.
@@ -371,6 +411,7 @@ function App() {
     setAddBoardNameError('')
 
     setIsBoardMenuOpen(false)
+    resetDeleteBoardState()
 
     setEditingBoardId(activeBoard.id)
     setEditBoardName(activeBoard.name)
@@ -378,6 +419,33 @@ function App() {
     setEditBoardColumns(mapBoardColumnsToEditableItems(activeBoard))
     setEditBoardColumnsError('')
     setIsEditBoardModalOpen(true)
+  }
+
+  // Deletes the selected board locally and switches to the first remaining board.
+  function handleDeleteBoardConfirm() {
+    if (!deletingBoardId) {
+      return
+    }
+
+    const remainingBoards = boardsData.filter((board) => board.id !== deletingBoardId)
+
+    setBoardsData(remainingBoards)
+    setActiveBoardId(remainingBoards[0]?.id ?? '')
+
+    setActiveTaskId(null)
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+    setIsAddTaskModalOpen(false)
+    setIsAddStatusMenuOpen(false)
+    setIsEditTaskModalOpen(false)
+    setEditingTaskId(null)
+    setIsEditStatusMenuOpen(false)
+    setIsAddBoardModalOpen(false)
+    setAddBoardNameError('')
+    setIsEditBoardModalOpen(false)
+    resetEditBoardForm()
+    setIsBoardMenuOpen(false)
+    resetDeleteBoardState()
   }
 
   // Closes the Edit Board modal and clears its local form state.
@@ -426,6 +494,7 @@ function App() {
     setActiveTaskId(null)
 
     setIsBoardMenuOpen(false)
+    resetDeleteBoardState()
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
@@ -954,6 +1023,19 @@ function App() {
           onColumnValueChange={handleEditBoardColumnValueChange}
           onPrimaryAction={handleSaveBoardChanges}
           variant="editBoard"
+        />
+      ) : null}
+
+      {isDeleteBoardModalOpen ? (
+        <Modal
+          description={deleteBoardDescription}
+          mode={mode}
+          onClose={handleDeleteBoardModalClose}
+          onPrimaryAction={handleDeleteBoardConfirm}
+          onSecondaryAction={handleDeleteBoardModalClose}
+          secondaryActionLabel="Cancel"
+          title="Delete this board?"
+          variant="deleteBoard"
         />
       ) : null}
     </main>
