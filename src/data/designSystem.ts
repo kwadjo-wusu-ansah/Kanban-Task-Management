@@ -48,9 +48,18 @@ export interface BoardSummary {
 
 export interface BoardTaskPreview {
   completedSubtaskCount: number
+  description: string
   id: string
+  status: string
+  subtasks: BoardSubtaskPreview[]
   title: string
   totalSubtaskCount: number
+}
+
+export interface BoardSubtaskPreview {
+  id: string
+  isCompleted: boolean
+  title: string
 }
 
 export interface BoardColumnPreview {
@@ -173,12 +182,23 @@ function buildBoardPreviews(boards: DatasetBoard[]): BoardPreview[] {
       accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
       id: `${toId(board.name)}-${toId(column.name)}-${columnIndex}`,
       name: column.name,
-      tasks: column.tasks.map((task, taskIndex) => ({
-        completedSubtaskCount: task.subtasks.filter((subtask) => subtask.isCompleted).length,
-        id: `${toId(column.name)}-${toId(task.title)}-${taskIndex}`,
-        title: task.title,
-        totalSubtaskCount: task.subtasks.length,
-      })),
+      tasks: column.tasks.map((task, taskIndex) => {
+        const taskId = `${toId(column.name)}-${toId(task.title)}-${taskIndex}`
+
+        return {
+          completedSubtaskCount: task.subtasks.filter((subtask) => subtask.isCompleted).length,
+          description: task.description,
+          id: taskId,
+          status: task.status,
+          subtasks: task.subtasks.map((subtask, subtaskIndex) => ({
+            id: `${taskId}-subtask-${subtaskIndex}`,
+            isCompleted: subtask.isCompleted,
+            title: subtask.title,
+          })),
+          title: task.title,
+          totalSubtaskCount: task.subtasks.length,
+        }
+      }),
     })),
     id: `${toId(board.name)}-${boardIndex}`,
     name: board.name,
