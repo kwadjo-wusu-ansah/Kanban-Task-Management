@@ -1,0 +1,34 @@
+.content {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.title {
+  color: var(--color-black);
+  font-size: var(--text-heading-xl-size);
+  font-weight: 700;
+  line-height: var(--line-height-compact);
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.dark .title {
+  color: var(--color-white);
+}
+
+@media (max-width: 787px) {
+  .content {
+    gap: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--text-heading-l-size);
+  }
+}

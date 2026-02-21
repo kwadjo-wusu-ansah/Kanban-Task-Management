@@ -1,0 +1,42 @@
+.page {
+  align-items: center;
+  background: var(--color-light-grey);
+  display: flex;
+  inline-size: 100%;
+  justify-content: center;
+  min-block-size: 100vh;
+  padding: var(--space-6);
+}
+
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100%, 480px);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.title {
+  color: var(--color-black);
+  font-size: var(--text-heading-xl-size);
+  font-weight: 700;
+  line-height: var(--line-height-compact);
+  margin: 0;
+}
+
+.description {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+}

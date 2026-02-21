@@ -1,0 +1,12 @@
+.description {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.actionRow {
+  display: flex;
+  gap: var(--space-4);
+}

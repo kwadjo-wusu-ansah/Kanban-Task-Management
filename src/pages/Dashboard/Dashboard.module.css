@@ -1,0 +1,51 @@
+.intro {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.linksRow {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.routeLink {
+  color: var(--color-primary);
+  font-size: var(--text-body-l-size);
+  font-weight: 700;
+  line-height: var(--line-height-body);
+  text-decoration: none;
+}
+
+.boardList {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.boardLink {
+  align-items: center;
+  background: var(--color-white);
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  color: var(--color-black);
+  display: flex;
+  font-size: var(--text-heading-m-size);
+  font-weight: 700;
+  justify-content: space-between;
+  min-block-size: 88px;
+  padding: var(--space-5);
+  text-decoration: none;
+}
+
+.boardMeta {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-m-size);
+  font-weight: 700;
+  line-height: var(--line-height-compact);
+}
