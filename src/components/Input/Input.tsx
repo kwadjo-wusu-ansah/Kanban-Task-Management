@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import { iconCheck, iconChevronDown } from '../../assets'
 import { classNames } from '../../utils'
 import styles from './Input.module.css'
@@ -11,6 +12,19 @@ import {
   resolveCheckboxCheckedValue,
   resolveDropdownDisplayValue,
 } from './Input.utils'
+
+// Chooses dropdown menu placement from available viewport space around the trigger.
+function getDropdownMenuPlacement(triggerRect: DOMRect, optionCount: number): 'bottom' | 'top' {
+  const estimatedMenuHeight = optionCount * 31 + 32
+  const availableSpaceBelow = window.innerHeight - triggerRect.bottom
+  const availableSpaceAbove = triggerRect.top
+
+  if (availableSpaceBelow < estimatedMenuHeight && availableSpaceAbove > availableSpaceBelow) {
+    return 'top'
+  }
+
+  return 'bottom'
+}
 
 // Renders checkbox input rows with mode-aware idle, hover, and active visuals.
 function renderCheckboxInput({
@@ -87,9 +101,11 @@ function renderTextFieldInput({
 }
 
 // Renders dropdown rows with mode-aware idle, active, and menu-open visuals.
-function renderDropdownInput({
+function DropdownInputView({
   className,
+  dropdownPlacement = 'bottom',
   dropdownLabel,
+  dropdownWrapRef,
   isMenuOpen = false,
   mode = 'dark',
   onDropdownSelect,
@@ -97,11 +113,11 @@ function renderDropdownInput({
   options,
   state = 'idle',
   value,
-}: DropdownInputProps) {
+}: DropdownInputProps & { dropdownPlacement?: 'bottom' | 'top'; dropdownWrapRef?: RefObject<HTMLDivElement | null> }) {
   const selectedLabel = resolveDropdownDisplayValue(value, options)
 
   return (
-    <div className={classNames(styles.root, getModeClassName(mode, styles), styles.fieldGroup, className)}>
+    <div className={classNames(styles.root, getModeClassName(mode, styles), styles.fieldGroup, className)} ref={dropdownWrapRef}>
       {dropdownLabel ? <span className={styles.fieldLabel}>{dropdownLabel}</span> : null}
       <div className={classNames(styles.dropdownWrap, isMenuOpen && styles.dropdownWrapOpen)}>
         <button
@@ -115,7 +131,7 @@ function renderDropdownInput({
           <img alt="" aria-hidden="true" className={styles.dropdownChevronIcon} src={iconChevronDown} />
         </button>
         {isMenuOpen ? (
-          <ul className={styles.dropdownMenu} role="listbox">
+          <ul className={classNames(styles.dropdownMenu, dropdownPlacement === 'top' && styles.dropdownMenuTop)} role="listbox">
             {options.map((option) => (
               <li className={styles.dropdownMenuOption} key={option.value} role="option">
                 <button className={styles.dropdownOptionButton} onClick={() => onDropdownSelect?.(option.value)} type="button">
@@ -133,6 +149,18 @@ function renderDropdownInput({
 // Renders a unified input primitive for checkbox, text field, and dropdown controls.
 function Input(props: InputProps) {
   const [uncontrolledCheckboxChecked, setUncontrolledCheckboxChecked] = useState(false)
+  const [dropdownPlacement, setDropdownPlacement] = useState<'bottom' | 'top'>('bottom')
+  const dropdownTriggerRef = useRef<HTMLDivElement | null>(null)
+
+  // Resolves dropdown opening direction so the list stays visible near viewport edges.
+  useEffect(() => {
+    if (props.variant !== 'dropdown' || !props.isMenuOpen || !dropdownTriggerRef.current) {
+      return
+    }
+
+    const triggerRect = dropdownTriggerRef.current.getBoundingClientRect()
+    setDropdownPlacement(getDropdownMenuPlacement(triggerRect, props.options.length))
+  }, [props])
 
   if (props.variant === 'checkbox') {
     const isControlled = typeof props.checked === 'boolean'
@@ -160,7 +188,7 @@ function Input(props: InputProps) {
     return renderTextFieldInput(props)
   }
 
-  return renderDropdownInput(props)
+  return <DropdownInputView {...props} dropdownPlacement={dropdownPlacement} dropdownWrapRef={dropdownTriggerRef} />
 }
 
 export default Input

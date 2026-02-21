@@ -263,6 +263,11 @@
   z-index: 1;
 }
 
+.dropdownMenuTop {
+  inset-block-end: calc(100% + var(--space-2));
+  inset-block-start: auto;
+}
+
 .darkMode .dropdownMenu {
   background: var(--color-very-dark-grey);
 }
