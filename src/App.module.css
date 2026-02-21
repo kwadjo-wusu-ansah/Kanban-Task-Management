@@ -76,15 +76,15 @@
 
 @media (min-width: 788px) and (max-width: 1023px) {
   .boardCanvas {
-    padding: var(--space-6) var(--space-5);
+    padding: 23px var(--space-6) 67px;
   }
 
   .columnsScroller {
-    gap: var(--space-5);
+    gap: var(--space-6);
   }
 
   .addColumnLane {
-    block-size: calc(100vh - 129px);
+    block-size: calc(100vh - 210px);
   }
 
   .emptyStateWrapper {
