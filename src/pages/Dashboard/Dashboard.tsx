@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { MainShell } from '../MainShell'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectApiHydrationStatus, selectBoardPreviews, selectHasHydratedFromApi } from '../../store/selectors'
+import { selectApiHydrationError, selectApiHydrationStatus, selectBoardPreviews, selectHasHydratedFromApi } from '../../store/selectors'
 import { kanbanDataHydratedFromApi } from '../../store/slices'
 import styles from './Dashboard.module.css'
 
@@ -19,7 +19,9 @@ function Dashboard() {
   const dispatch = useAppDispatch()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const hasHydratedFromApi = useAppSelector(selectHasHydratedFromApi)
+  const apiHydrationError = useAppSelector(selectApiHydrationError)
   const apiHydrationStatus = useAppSelector(selectApiHydrationStatus)
+  const hasHydrationError = apiHydrationStatus === 'failed'
   const isLoadingBoards = apiHydrationStatus === 'loading'
 
   // Requests remote board data only during the initial idle hydration state.
@@ -31,6 +33,11 @@ function Dashboard() {
     void dispatch(kanbanDataHydratedFromApi())
   }, [apiHydrationStatus, dispatch, hasHydratedFromApi])
 
+  // Retries fetching board data after an API hydration failure.
+  function handleRetryBoardsLoad() {
+    void dispatch(kanbanDataHydratedFromApi())
+  }
+
   return (
     <MainShell title="Dashboard">
       <p className={styles.intro}>Select a board to open its tasks and columns.</p>
@@ -38,6 +45,15 @@ function Dashboard() {
         <p aria-live="polite" className={styles.statusMessage}>
           Loading latest boards...
         </p>
+      ) : null}
+      {hasHydrationError ? (
+        <section aria-live="assertive" className={styles.errorPanel} role="alert">
+          <p className={styles.errorTitle}>We couldn&apos;t load the latest board data.</p>
+          <p className={styles.errorDescription}>{apiHydrationError ?? 'Please check your connection and try again.'}</p>
+          <button className={styles.retryButton} onClick={handleRetryBoardsLoad} type="button">
+            Retry loading boards
+          </button>
+        </section>
       ) : null}
       <div className={styles.linksRow}>
         <Link className={styles.routeLink} to="/admin">

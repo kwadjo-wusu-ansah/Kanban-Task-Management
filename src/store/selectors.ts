@@ -98,3 +98,6 @@ export const selectHasHydratedFromApi = createSelector([selectKanbanState], (sta
 
 // Reads the current API hydration status for dashboard loading UX.
 export const selectApiHydrationStatus = createSelector([selectKanbanState], (state) => state.ui.apiHydrationStatus)
+
+// Reads the latest API hydration error message for retry and feedback UI.
+export const selectApiHydrationError = createSelector([selectKanbanState], (state) => state.ui.apiHydrationError)
