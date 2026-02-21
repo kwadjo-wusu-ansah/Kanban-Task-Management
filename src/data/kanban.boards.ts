@@ -4,7 +4,7 @@ import type { BoardPreview, BoardSummary, DatasetBoard } from './kanban.types'
 const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
 
 // Builds board-level task totals used by the design-system preview cards.
-function buildBoardSummaries(boards: DatasetBoard[]): BoardSummary[] {
+export function buildBoardSummaries(boards: DatasetBoard[]): BoardSummary[] {
   return boards.map((board) => ({
     name: board.name,
     columnCount: board.columns.length,
@@ -13,7 +13,7 @@ function buildBoardSummaries(boards: DatasetBoard[]): BoardSummary[] {
 }
 
 // Normalizes a display label into a stable ID-safe slug.
-function toId(value: string): string {
+export function toId(value: string): string {
   return value
     .trim()
     .toLowerCase()
@@ -22,7 +22,7 @@ function toId(value: string): string {
 }
 
 // Builds typed board, column, and task models used by board-page composition.
-function buildBoardPreviews(boards: DatasetBoard[]): BoardPreview[] {
+export function buildBoardPreviews(boards: DatasetBoard[]): BoardPreview[] {
   return boards.map((board, boardIndex) => ({
     columns: board.columns.map((column, columnIndex) => ({
       accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],

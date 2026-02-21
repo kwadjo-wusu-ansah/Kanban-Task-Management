@@ -92,3 +92,6 @@ export const selectSidebarBoards = createSelector([selectKanbanState], (state) =
     })
     .filter((board): board is { id: string; name: string } => Boolean(board)),
 )
+
+// Reads whether the store has already hydrated board data from the API.
+export const selectHasHydratedFromApi = createSelector([selectKanbanState], (state) => state.ui.hasHydratedFromApi)

@@ -129,6 +129,7 @@ function sanitizeKanbanState(state: KanbanState): KanbanState {
   const selectedBoardId = typeof state.ui?.activeBoardId === 'string' ? state.ui.activeBoardId : null
   const activeBoardId = selectedBoardId && sanitizedBoards[selectedBoardId] ? selectedBoardId : sanitizedBoardIds[0] ?? null
   const theme = state.ui?.theme === 'dark' ? 'dark' : 'light'
+  const hasHydratedFromApi = Boolean(state.ui?.hasHydratedFromApi)
 
   return {
     boardIds: sanitizedBoardIds,
@@ -139,6 +140,9 @@ function sanitizeKanbanState(state: KanbanState): KanbanState {
     tasks: sanitizedTasks,
     ui: {
       activeBoardId,
+      apiHydrationError: null,
+      apiHydrationStatus: hasHydratedFromApi ? 'succeeded' : 'idle',
+      hasHydratedFromApi,
       theme,
     },
   }

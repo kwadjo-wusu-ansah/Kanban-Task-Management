@@ -1,8 +1,9 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import { boardPreviews } from '../../data'
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { boardPreviews, buildBoardPreviews, fetchKanbanDataset } from '../../data'
 import type { BoardPreview } from '../../data'
 
 export type ThemePreference = 'light' | 'dark'
+export type ApiHydrationStatus = 'idle' | 'loading' | 'succeeded' | 'failed'
 const DEFAULT_COLUMN_ACCENT_COLOR = '#49c4e5'
 
 export interface KanbanSubtaskEntity {
@@ -37,6 +38,9 @@ export interface KanbanBoardEntity {
 
 export interface KanbanUiState {
   activeBoardId: string | null
+  apiHydrationError: string | null
+  apiHydrationStatus: ApiHydrationStatus
+  hasHydratedFromApi: boolean
   theme: ThemePreference
 }
 
@@ -132,6 +136,21 @@ export interface ReorderBoardColumnsPayload {
   boardId: string
   columnIds: string[]
 }
+
+// Fetches remote Kanban data and maps it into board previews for store hydration.
+export const kanbanDataHydratedFromApi = createAsyncThunk<BoardPreview[], void, { state: { kanban: KanbanState } }>(
+  'kanban/kanbanDataHydratedFromApi',
+  async () => {
+    const dataset = await fetchKanbanDataset()
+    return buildBoardPreviews(dataset.boards)
+  },
+  {
+    condition: (_, { getState }) => {
+      const { apiHydrationStatus, hasHydratedFromApi } = getState().kanban.ui
+      return !hasHydratedFromApi && apiHydrationStatus !== 'loading'
+    },
+  },
+)
 
 // Clones subtasks so reducer writes never retain references from action payloads.
 function cloneSubtasks(subtasks: KanbanSubtaskEntity[] | undefined): KanbanSubtaskEntity[] {
@@ -247,9 +266,29 @@ function buildInitialState(boards: BoardPreview[]): KanbanState {
     tasks: tasksById,
     ui: {
       activeBoardId: boardIds[0] ?? null,
+      apiHydrationError: null,
+      apiHydrationStatus: 'idle',
+      hasHydratedFromApi: false,
       theme: 'light',
     },
   }
+}
+
+// Builds replacement entity maps from API payload while preserving safe UI preferences.
+function buildHydratedState(state: KanbanState, boards: BoardPreview[]): KanbanState {
+  const hydratedState = buildInitialState(boards)
+  const preferredBoardId = state.ui.activeBoardId
+
+  hydratedState.ui = {
+    activeBoardId:
+      preferredBoardId && hydratedState.boards[preferredBoardId] ? preferredBoardId : (hydratedState.boardIds[0] ?? null),
+    apiHydrationError: null,
+    apiHydrationStatus: 'succeeded',
+    hasHydratedFromApi: true,
+    theme: state.ui.theme,
+  }
+
+  return hydratedState
 }
 
 const initialState = buildInitialState(boardPreviews)
@@ -531,6 +570,18 @@ const kanbanSlice = createSlice({
 
       board.columnIds = dedupeIds([...nextOrder, ...remainingColumns])
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(kanbanDataHydratedFromApi.pending, (state) => {
+        state.ui.apiHydrationError = null
+        state.ui.apiHydrationStatus = 'loading'
+      })
+      .addCase(kanbanDataHydratedFromApi.fulfilled, (state, action) => buildHydratedState(state, action.payload))
+      .addCase(kanbanDataHydratedFromApi.rejected, (state, action) => {
+        state.ui.apiHydrationError = action.error.message ?? 'Unable to load board data from API.'
+        state.ui.apiHydrationStatus = 'failed'
+      })
   },
 })
 
