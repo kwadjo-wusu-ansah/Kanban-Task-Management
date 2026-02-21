@@ -142,8 +142,24 @@ function cloneSubtasks(subtasks: KanbanSubtaskEntity[] | undefined): KanbanSubta
   }))
 }
 
+// Deduplicates IDs while preserving the first-seen ordering.
+function dedupeIds(values: string[]): string[] {
+  const seenValues = new Set<string>()
+
+  return values.filter((value) => {
+    if (seenValues.has(value)) {
+      return false
+    }
+
+    seenValues.add(value)
+    return true
+  })
+}
+
 // Inserts an ID into a list at an optional index, defaulting to append.
 function insertAtPosition(values: string[], value: string, index?: number): void {
+  removeFromList(values, value)
+
   if (typeof index !== 'number' || index < 0 || index > values.length) {
     values.push(value)
     return
@@ -508,12 +524,12 @@ const kanbanSlice = createSlice({
         return
       }
 
-      const nextOrder = columnIds.filter((columnId) => state.columns[columnId]?.boardId === boardId)
+      const nextOrder = dedupeIds(columnIds).filter((columnId) => state.columns[columnId]?.boardId === boardId)
       const remainingColumns = board.columnIds.filter(
         (columnId) => !nextOrder.includes(columnId) && state.columns[columnId]?.boardId === boardId,
       )
 
-      board.columnIds = [...nextOrder, ...remainingColumns]
+      board.columnIds = dedupeIds([...nextOrder, ...remainingColumns])
     },
   },
 })

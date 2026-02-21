@@ -76,9 +76,19 @@ export const selectBoardPreviews = createSelector([selectKanbanState], (state): 
 )
 
 // Builds sidebar-friendly board entries from denormalized board previews.
-export const selectSidebarBoards = createSelector([selectBoardPreviews], (boards) =>
-  boards.map((board) => ({
-    id: board.id,
-    name: board.name,
-  })),
+export const selectSidebarBoards = createSelector([selectKanbanState], (state) =>
+  state.boardIds
+    .map((boardId) => {
+      const board = state.boards[boardId]
+
+      if (!board) {
+        return undefined
+      }
+
+      return {
+        id: board.id,
+        name: board.name,
+      }
+    })
+    .filter((board): board is { id: string; name: string } => Boolean(board)),
 )
