@@ -7,9 +7,9 @@ function App() {
   return (
     <Routes>
       <Route element={<Dashboard />} path="/" />
-      <Route element={<BoardView />} path="/board/:boardId" />
       <Route element={<Login />} path="/login" />
       <Route element={<ProtectedRoute />}>
+        <Route element={<BoardView />} path="/board/:boardId" />
         <Route element={<Admin />} path="/admin" />
       </Route>
       <Route element={<NotFound />} path="*" />
