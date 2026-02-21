@@ -95,3 +95,6 @@ export const selectSidebarBoards = createSelector([selectKanbanState], (state) =
 
 // Reads whether the store has already hydrated board data from the API.
 export const selectHasHydratedFromApi = createSelector([selectKanbanState], (state) => state.ui.hasHydratedFromApi)
+
+// Reads the current API hydration status for dashboard loading UX.
+export const selectApiHydrationStatus = createSelector([selectKanbanState], (state) => state.ui.apiHydrationStatus)

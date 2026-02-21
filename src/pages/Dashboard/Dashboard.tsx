@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { MainShell } from '../MainShell'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectBoardPreviews, selectHasHydratedFromApi } from '../../store/selectors'
+import { selectApiHydrationStatus, selectBoardPreviews, selectHasHydratedFromApi } from '../../store/selectors'
 import { kanbanDataHydratedFromApi } from '../../store/slices'
 import styles from './Dashboard.module.css'
 
@@ -19,19 +19,26 @@ function Dashboard() {
   const dispatch = useAppDispatch()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const hasHydratedFromApi = useAppSelector(selectHasHydratedFromApi)
+  const apiHydrationStatus = useAppSelector(selectApiHydrationStatus)
+  const isLoadingBoards = apiHydrationStatus === 'loading'
 
-  // Requests remote board data the first time the dashboard is visited.
+  // Requests remote board data only during the initial idle hydration state.
   useEffect(() => {
-    if (hasHydratedFromApi) {
+    if (hasHydratedFromApi || apiHydrationStatus !== 'idle') {
       return
     }
 
     void dispatch(kanbanDataHydratedFromApi())
-  }, [dispatch, hasHydratedFromApi])
+  }, [apiHydrationStatus, dispatch, hasHydratedFromApi])
 
   return (
     <MainShell title="Dashboard">
       <p className={styles.intro}>Select a board to open its tasks and columns.</p>
+      {isLoadingBoards ? (
+        <p aria-live="polite" className={styles.statusMessage}>
+          Loading latest boards...
+        </p>
+      ) : null}
       <div className={styles.linksRow}>
         <Link className={styles.routeLink} to="/admin">
           Go to Admin
