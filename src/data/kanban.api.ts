@@ -1,6 +1,12 @@
 import type { DatasetBoard, DatasetColumn, DatasetTask, KanbanDataset } from './kanban.types'
 
-const DEFAULT_KANBAN_API_PATH = 'api/kanban.json'
+/*
+Normal: http://localhost:5173/api/kanban
+Slow response: http://localhost:5173/api/kanban?delayMs=3000
+Forced failure: http://localhost:5173/api/kanban?fail=true
+*/
+
+const DEFAULT_KANBAN_API_PATH = 'api/kanban'
 const MAX_SIMULATED_DELAY_MS = 15000
 
 // Validates that a subtask payload contains the required string/boolean fields.
