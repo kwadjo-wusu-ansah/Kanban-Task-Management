@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router'
 import type { BoardPreview, BoardTaskPreview } from '../../data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
 import type { DropdownOption, ModalItem, SidebarMode } from '../../components'
+import { useHydrateKanbanData } from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
 import {
@@ -153,6 +154,7 @@ function buildDeleteTaskDescription(taskName: string): string {
 function BoardView() {
   const { boardId, taskId } = useParams()
   const dispatch = useAppDispatch()
+  useHydrateKanbanData()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const boards = useAppSelector(selectSidebarBoards)
   const navigate = useNavigate()

@@ -1,9 +1,8 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router'
+import { useHydrateKanbanData } from '../../hooks'
 import { MainShell } from '../MainShell'
-import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectApiHydrationError, selectApiHydrationStatus, selectBoardPreviews, selectHasHydratedFromApi } from '../../store/selectors'
-import { kanbanDataHydratedFromApi } from '../../store/slices'
+import { useAppSelector } from '../../store/hooks'
+import { selectApiHydrationError, selectApiHydrationStatus, selectBoardPreviews } from '../../store/selectors'
 import styles from './Dashboard.module.css'
 
 // Computes total task count for dashboard board summary cards.
@@ -16,26 +15,16 @@ function getTaskCount(columnCount: number, taskCount: number): string {
 
 // Renders the dashboard route listing all available boards with dynamic links.
 function Dashboard() {
-  const dispatch = useAppDispatch()
+  const { requestHydration } = useHydrateKanbanData()
   const boardPreviews = useAppSelector(selectBoardPreviews)
-  const hasHydratedFromApi = useAppSelector(selectHasHydratedFromApi)
   const apiHydrationError = useAppSelector(selectApiHydrationError)
   const apiHydrationStatus = useAppSelector(selectApiHydrationStatus)
   const hasHydrationError = apiHydrationStatus === 'failed'
   const isLoadingBoards = apiHydrationStatus === 'loading'
 
-  // Requests remote board data only during the initial idle hydration state.
-  useEffect(() => {
-    if (hasHydratedFromApi || apiHydrationStatus !== 'idle') {
-      return
-    }
-
-    void dispatch(kanbanDataHydratedFromApi())
-  }, [apiHydrationStatus, dispatch, hasHydratedFromApi])
-
   // Retries fetching board data after an API hydration failure.
   function handleRetryBoardsLoad() {
-    void dispatch(kanbanDataHydratedFromApi())
+    requestHydration()
   }
 
   return (
