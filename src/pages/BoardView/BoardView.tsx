@@ -29,7 +29,7 @@ const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
 const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
 const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
 const MOBILE_BREAKPOINT = 788
-const FALLBACK_BOARD_NAME = 'Platform Launch'
+const FALLBACK_BOARD_NAME = 'Kanban Board'
 
 let nextClientId = 0
 
@@ -154,7 +154,7 @@ function buildDeleteTaskDescription(taskName: string): string {
 function BoardView() {
   const { boardId, taskId } = useParams()
   const dispatch = useAppDispatch()
-  useHydrateKanbanData()
+  const { apiHydrationStatus } = useHydrateKanbanData()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const boards = useAppSelector(selectSidebarBoards)
   const navigate = useNavigate()
@@ -243,13 +243,15 @@ function BoardView() {
     if (!hasMatchingBoard) {
       if (boardPreviews[0]) {
         navigate(`/board/${boardPreviews[0].id}`, { replace: true })
-      } else {
+      } else if (apiHydrationStatus === 'succeeded' || apiHydrationStatus === 'failed') {
         navigate('/', { replace: true })
+      } else {
+        return
       }
       return
     }
 
-  }, [boardId, boardPreviews, navigate])
+  }, [apiHydrationStatus, boardId, boardPreviews, navigate])
 
   // Syncs task modal state with nested task route params and redirects unknown tasks.
   useEffect(() => {

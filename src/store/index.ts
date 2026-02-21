@@ -53,10 +53,11 @@ function isPersistedStoreState(value: unknown): value is PersistedStoreState {
 
 // Sanitizes persisted Kanban state to remove stale references and duplicate IDs.
 function sanitizeKanbanState(state: KanbanState): KanbanState {
-  const sourceBoardIds = Array.isArray(state.boardIds) ? state.boardIds : []
-  const sourceBoards = typeof state.boards === 'object' && state.boards !== null ? state.boards : {}
-  const sourceColumns = typeof state.columns === 'object' && state.columns !== null ? state.columns : {}
-  const sourceTasks = typeof state.tasks === 'object' && state.tasks !== null ? state.tasks : {}
+  const hasHydratedFromApi = Boolean(state.ui?.hasHydratedFromApi)
+  const sourceBoardIds = hasHydratedFromApi && Array.isArray(state.boardIds) ? state.boardIds : []
+  const sourceBoards = hasHydratedFromApi && typeof state.boards === 'object' && state.boards !== null ? state.boards : {}
+  const sourceColumns = hasHydratedFromApi && typeof state.columns === 'object' && state.columns !== null ? state.columns : {}
+  const sourceTasks = hasHydratedFromApi && typeof state.tasks === 'object' && state.tasks !== null ? state.tasks : {}
 
   const sanitizedBoardIds = dedupeIds(sourceBoardIds).filter((boardId) => Boolean(sourceBoards[boardId]))
   const sanitizedBoards: KanbanState['boards'] = {}
@@ -129,7 +130,6 @@ function sanitizeKanbanState(state: KanbanState): KanbanState {
   const selectedBoardId = typeof state.ui?.activeBoardId === 'string' ? state.ui.activeBoardId : null
   const activeBoardId = selectedBoardId && sanitizedBoards[selectedBoardId] ? selectedBoardId : sanitizedBoardIds[0] ?? null
   const theme = state.ui?.theme === 'dark' ? 'dark' : 'light'
-  const hasHydratedFromApi = Boolean(state.ui?.hasHydratedFromApi)
 
   return {
     boardIds: sanitizedBoardIds,

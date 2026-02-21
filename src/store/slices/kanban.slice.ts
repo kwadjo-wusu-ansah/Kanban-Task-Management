@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import { boardPreviews, buildBoardPreviews, fetchKanbanDataset } from '../../data'
+import { buildBoardPreviews, fetchKanbanDataset } from '../../data'
 import type { BoardPreview } from '../../data'
 
 export type ThemePreference = 'light' | 'dark'
@@ -291,7 +291,7 @@ function buildHydratedState(state: KanbanState, boards: BoardPreview[]): KanbanS
   return hydratedState
 }
 
-const initialState = buildInitialState(boardPreviews)
+const initialState = buildInitialState([])
 
 const kanbanSlice = createSlice({
   initialState,
