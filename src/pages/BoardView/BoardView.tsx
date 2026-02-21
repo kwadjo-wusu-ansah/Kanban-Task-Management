@@ -150,7 +150,7 @@ const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
 // Renders the board view screen and syncs the active board with route params.
 function BoardView() {
-  const { boardId } = useParams()
+  const { boardId, taskId } = useParams()
   const navigate = useNavigate()
   const [mode, setMode] = useState<SidebarMode>('light')
   const [isSidebarHidden, setIsSidebarHidden] = useState(false)
@@ -159,7 +159,6 @@ function BoardView() {
   const boards = buildSidebarBoards(boardsData)
   const activeBoardId = boardId ?? boards[0]?.id ?? fallbackBoards[0].id
 
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [isViewStatusMenuOpen, setIsViewStatusMenuOpen] = useState(false)
   const [viewStatusValue, setViewStatusValue] = useState('')
@@ -209,7 +208,7 @@ function BoardView() {
   const [deletingTaskName, setDeletingTaskName] = useState('')
 
   const activeBoard = getActiveBoard(boardsData, activeBoardId)
-  const activeTask = getActiveTask(activeBoard, activeTaskId)
+  const activeTask = getActiveTask(activeBoard, taskId ?? null)
   const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
   const hasColumns = (activeBoard?.columns.length ?? 0) > 0
   const boardCount = boards.length
@@ -241,6 +240,31 @@ function BoardView() {
 
   }, [boardId, boardsData, navigate])
 
+  // Syncs task modal state with nested task route params and redirects unknown tasks.
+  useEffect(() => {
+    if (!taskId) {
+      setIsTaskMenuOpen(false)
+      setIsViewStatusMenuOpen(false)
+      return
+    }
+
+    if (!activeBoard) {
+      return
+    }
+
+    const nextTask = getActiveTask(activeBoard, taskId)
+
+    if (!nextTask) {
+      navigate(`/board/${activeBoardId}`, { replace: true })
+      return
+    }
+
+    setViewStatusValue(nextTask.status)
+    setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
+    setIsTaskMenuOpen(false)
+    setIsViewStatusMenuOpen(false)
+  }, [activeBoard, activeBoardId, navigate, taskId])
+
   // Tracks the mobile breakpoint so the app can switch between desktop sidebar and mobile header layouts.
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
@@ -268,6 +292,16 @@ function BoardView() {
   function closeHeaderMenus() {
     setIsBoardMenuOpen(false)
     setIsMobileBoardsMenuOpen(false)
+  }
+
+  // Navigates to the current board route while clearing any nested task segment.
+  function navigateToBoardRoute(replace = false) {
+    if (replace) {
+      navigate(`/board/${activeBoardId}`, { replace: true })
+      return
+    }
+
+    navigate(`/board/${activeBoardId}`)
   }
 
   // Resets local Add Task form state to initial values for the active board.
@@ -323,7 +357,6 @@ function BoardView() {
     const nextStatusOptions = buildStatusOptions(nextBoard)
 
     navigate(`/board/${nextBoardId}`)
-    setActiveTaskId(null)
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
 
@@ -377,7 +410,7 @@ function BoardView() {
     resetDeleteBoardState()
     resetDeleteTaskState()
 
-    setActiveTaskId(nextTask.id)
+    navigate(`/board/${activeBoardId}/task/${nextTask.id}`)
     setIsTaskMenuOpen(false)
     setViewStatusValue(nextTask.status)
     setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
@@ -390,7 +423,7 @@ function BoardView() {
       return
     }
 
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
 
@@ -417,7 +450,7 @@ function BoardView() {
 
   // Opens Add Board modal with a clean form and closes other task overlays.
   function handleAddBoardOpen() {
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
 
@@ -448,7 +481,7 @@ function BoardView() {
       return
     }
 
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
     setIsAddTaskModalOpen(false)
@@ -469,7 +502,7 @@ function BoardView() {
 
   // Closes the view-task modal and related menu/dropdown state.
   function handleViewTaskModalClose() {
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
   }
@@ -543,7 +576,7 @@ function BoardView() {
       return
     }
 
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
 
@@ -586,7 +619,6 @@ function BoardView() {
       navigate('/', { replace: true })
     }
 
-    setActiveTaskId(null)
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
     setIsAddTaskModalOpen(false)
@@ -648,7 +680,7 @@ function BoardView() {
 
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
-    setActiveTaskId(null)
+    navigateToBoardRoute()
 
     closeHeaderMenus()
     resetDeleteBoardState()
@@ -670,7 +702,7 @@ function BoardView() {
 
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
-    setActiveTaskId(null)
+    navigateToBoardRoute()
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
@@ -710,12 +742,12 @@ function BoardView() {
       }),
     )
 
-    setActiveTaskId(null)
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
+    navigate(`/board/${deletingTaskBoardId}`, { replace: true })
     resetDeleteTaskState()
   }
 
