@@ -72,6 +72,24 @@
   white-space: nowrap;
 }
 
+.titleToggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: inherit;
+  min-inline-size: 0;
+  padding: 0;
+}
+
+.titleToggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .sidebarVisible .title {
   padding-inline-start: 0;
 }
@@ -243,6 +261,10 @@
     gap: 6px;
     max-inline-size: 170px;
     padding-inline-start: 0;
+  }
+
+  .titleToggle {
+    max-inline-size: 170px;
   }
 
   .actions {

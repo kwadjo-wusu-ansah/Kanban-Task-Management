@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { iconAddTaskMobile, iconChevronDown, iconVerticalEllipsis, logoDark, logoLight, logoMobile } from '../../assets'
+import { iconAddTaskMobile, iconChevronDown, iconChevronUp, iconVerticalEllipsis, logoDark, logoLight, logoMobile } from '../../assets'
 import { classNames } from '../../utils'
 import { Button } from '../Button'
 import styles from './Header.module.css'
@@ -19,11 +19,13 @@ function Header({
   addTaskLabel = '+ Add New Task',
   boardName,
   className,
+  isBoardSwitcherOpen = false,
   isMobile = false,
   isAddTaskDisabled = false,
   isMenuOpen = false,
   mode = 'light',
   onAddTask,
+  onBoardSwitcherToggle,
   onDeleteBoard,
   onEditBoard,
   onMenuClose,
@@ -71,10 +73,28 @@ function Header({
     >
       <div className={styles.leadingGroup}>
         {shouldShowLogo ? <div className={styles.logoSlot}><img alt="Kanban" className={styles.logo} src={getLogoSource(mode, isMobile)} /></div> : null}
-        <h1 className={classNames(styles.title, isMobile && styles.titleMobile)}>
-          <span className={styles.titleText}>{boardName}</span>
-          {isMobile ? <img alt="" aria-hidden="true" className={styles.boardChevron} src={iconChevronDown} /> : null}
-        </h1>
+        {isMobile ? (
+          <h1 className={classNames(styles.title, styles.titleMobile)}>
+            <button
+              aria-label="Toggle boards menu"
+              className={styles.titleToggle}
+              onClick={onBoardSwitcherToggle}
+              type="button"
+            >
+              <span className={styles.titleText}>{boardName}</span>
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.boardChevron}
+                src={isBoardSwitcherOpen ? iconChevronUp : iconChevronDown}
+              />
+            </button>
+          </h1>
+        ) : (
+          <h1 className={styles.title}>
+            <span className={styles.titleText}>{boardName}</span>
+          </h1>
+        )}
       </div>
 
       <div className={styles.actions}>

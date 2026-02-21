@@ -187,6 +187,7 @@ function App() {
   const [addColumnNameError, setAddColumnNameError] = useState('')
 
   const [isBoardMenuOpen, setIsBoardMenuOpen] = useState(false)
+  const [isMobileBoardsMenuOpen, setIsMobileBoardsMenuOpen] = useState(false)
 
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false)
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
@@ -230,6 +231,19 @@ function App() {
       mediaQuery.removeEventListener('change', handleMobileBreakpointChange)
     }
   }, [])
+
+  // Closes the mobile boards popover when switching to tablet/desktop layouts.
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setIsMobileBoardsMenuOpen(false)
+    }
+  }, [isMobileViewport])
+
+  // Closes both header menus so only one top-level menu is visible at a time.
+  function closeHeaderMenus() {
+    setIsBoardMenuOpen(false)
+    setIsMobileBoardsMenuOpen(false)
+  }
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
@@ -296,7 +310,7 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
@@ -325,7 +339,7 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
@@ -359,7 +373,7 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
 
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
@@ -389,7 +403,7 @@ function App() {
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     setIsAddColumnModalOpen(false)
     resetAddColumnForm()
 
@@ -417,7 +431,7 @@ function App() {
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
     setIsEditBoardModalOpen(false)
@@ -460,6 +474,7 @@ function App() {
 
   // Toggles the header board-action menu.
   function handleBoardMenuToggle() {
+    setIsMobileBoardsMenuOpen(false)
     setIsBoardMenuOpen((previousMenuState) => !previousMenuState)
   }
 
@@ -468,14 +483,25 @@ function App() {
     setIsBoardMenuOpen(false)
   }
 
+  // Toggles the mobile board switcher popover from the header board title.
+  function handleMobileBoardsMenuToggle() {
+    setIsBoardMenuOpen(false)
+    setIsMobileBoardsMenuOpen((previousMenuState) => !previousMenuState)
+  }
+
+  // Closes the mobile board switcher popover.
+  function handleMobileBoardsMenuClose() {
+    setIsMobileBoardsMenuOpen(false)
+  }
+
   // Opens the Delete Board modal from the header board-action menu.
   function handleBoardDeleteAction() {
     if (!activeBoard) {
-      setIsBoardMenuOpen(false)
+      closeHeaderMenus()
       return
     }
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     setIsAddColumnModalOpen(false)
     resetAddColumnForm()
     setIsEditBoardModalOpen(false)
@@ -508,7 +534,7 @@ function App() {
     setIsAddColumnModalOpen(false)
     resetAddColumnForm()
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     resetDeleteBoardState()
     resetDeleteTaskState()
 
@@ -545,7 +571,7 @@ function App() {
     resetAddColumnForm()
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     resetDeleteBoardState()
     resetDeleteTaskState()
   }
@@ -595,7 +621,7 @@ function App() {
     setIsViewStatusMenuOpen(false)
     setActiveTaskId(null)
 
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     resetDeleteBoardState()
     resetDeleteTaskState()
 
@@ -619,7 +645,7 @@ function App() {
     setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
-    setIsBoardMenuOpen(false)
+    closeHeaderMenus()
     resetDeleteBoardState()
 
     setDeletingTaskBoardId(activeBoard.id)
@@ -1108,15 +1134,32 @@ function App() {
           theme={mode}
         />
       ) : null}
+      {isMobileViewport ? (
+        <Sidebar
+          activeBoardId={activeBoardId}
+          boardCount={boardCount}
+          boards={boards}
+          isMobile
+          mobileMenuOpen={isMobileBoardsMenuOpen}
+          mode={mode}
+          onBoardSelect={handleBoardSelect}
+          onCreateBoard={handleAddBoardOpen}
+          onMobileMenuClose={handleMobileBoardsMenuClose}
+          onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
+          theme={mode}
+        />
+      ) : null}
 
       <div className={styles.contentArea}>
         <Header
           boardName={activeBoardName}
+          isBoardSwitcherOpen={isMobileBoardsMenuOpen}
           isMobile={isMobileViewport}
           isAddTaskDisabled={!hasColumns}
           isMenuOpen={isBoardMenuOpen}
           mode={mode}
           onAddTask={handleAddTaskOpen}
+          onBoardSwitcherToggle={handleMobileBoardsMenuToggle}
           onDeleteBoard={handleBoardDeleteAction}
           onEditBoard={handleEditBoardOpen}
           onMenuClose={handleBoardMenuClose}

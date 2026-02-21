@@ -233,6 +233,43 @@
   inline-size: 16px;
 }
 
+.mobileBackdrop {
+  inset: 64px 0 0;
+  position: fixed;
+  z-index: 5;
+}
+
+.mobileBackdropLight {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.mobileBackdropDark {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.mobileSheet {
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-menu);
+  inline-size: 264px;
+  margin: var(--space-2) auto 0;
+  padding: 16px 0;
+}
+
+.mobileBoardsGroup {
+  margin-block-start: 0;
+}
+
+.mobileThemeToggle {
+  align-items: center;
+  border-radius: var(--radius-6);
+  display: flex;
+  gap: 23px;
+  inline-size: 235px;
+  justify-content: center;
+  margin: 8px auto 0;
+  min-block-size: 48px;
+}
+
 @media (min-width: 788px) and (max-width: 1023px) {
   .sidebar {
     inline-size: 260px;
@@ -271,5 +308,20 @@
 
   .showButton {
     inset-block-end: 32px;
+  }
+}
+
+@media (max-width: 787px) {
+  .mobileBoardsGroup .boardsLabel {
+    margin-inline-start: var(--space-6);
+  }
+
+  .mobileBoardsGroup .boardsList {
+    margin-block-start: var(--space-3);
+  }
+
+  .mobileBoardsGroup .boardItemButton {
+    inline-size: 240px;
+    padding-inline: var(--space-6);
   }
 }

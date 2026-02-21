@@ -12,10 +12,13 @@ export interface SidebarProps {
   boards: SidebarBoard[]
   className?: string
   hidden?: boolean
+  isMobile?: boolean
+  mobileMenuOpen?: boolean
   mode?: SidebarMode
   onBoardSelect?: (boardId: string) => void
   onCreateBoard?: () => void
   onHideSidebar?: () => void
+  onMobileMenuClose?: () => void
   onShowSidebar?: () => void
   onThemeToggle?: () => void
   theme?: SidebarTheme
