@@ -18,6 +18,7 @@ export interface SidebarProps {
   onBoardSelect?: (boardId: string) => void
   onCreateBoard?: () => void
   onHideSidebar?: () => void
+  onLogoClick?: () => void
   onMobileMenuClose?: () => void
   onShowSidebar?: () => void
   onThemeToggle?: () => void

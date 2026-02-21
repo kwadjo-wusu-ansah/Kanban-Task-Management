@@ -1191,6 +1191,7 @@ function BoardView() {
           onBoardSelect={handleBoardSelect}
           onCreateBoard={handleAddBoardOpen}
           onHideSidebar={() => setIsSidebarHidden(true)}
+          onLogoClick={() => navigate('/')}
           onShowSidebar={() => setIsSidebarHidden(false)}
           onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
           theme={mode}
@@ -1206,6 +1207,7 @@ function BoardView() {
           mode={mode}
           onBoardSelect={handleBoardSelect}
           onCreateBoard={handleAddBoardOpen}
+          onLogoClick={() => navigate('/')}
           onMobileMenuClose={handleMobileBoardsMenuClose}
           onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
           theme={mode}
@@ -1224,6 +1226,7 @@ function BoardView() {
           onBoardSwitcherToggle={handleMobileBoardsMenuToggle}
           onDeleteBoard={handleBoardDeleteAction}
           onEditBoard={handleEditBoardOpen}
+          onLogoClick={() => navigate('/')}
           onMenuClose={handleBoardMenuClose}
           onMenuOpen={handleBoardMenuToggle}
           sidebarVisible={isHeaderSidebarVisible}

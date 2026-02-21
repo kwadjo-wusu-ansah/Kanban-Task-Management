@@ -44,6 +44,7 @@ function Sidebar({
   onBoardSelect,
   onCreateBoard,
   onHideSidebar,
+  onLogoClick,
   onMobileMenuClose,
   onShowSidebar,
   onThemeToggle,
@@ -117,7 +118,13 @@ function Sidebar({
 
   return (
     <aside className={classNames(styles.sidebar, mode === 'dark' ? styles.dark : styles.light, className)}>
-      <img alt="Kanban" className={styles.logo} src={logoSource} />
+      {onLogoClick ? (
+        <button aria-label="Go to dashboard" className={styles.logoButton} onClick={onLogoClick} type="button">
+          <img alt="Kanban" className={styles.logo} src={logoSource} />
+        </button>
+      ) : (
+        <img alt="Kanban" className={styles.logo} src={logoSource} />
+      )}
 
       <section className={styles.boardsGroup}>
         <span className={styles.boardsLabel}>ALL BOARDS ({resolvedBoardCount})</span>

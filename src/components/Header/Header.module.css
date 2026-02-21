@@ -53,6 +53,20 @@
   inline-size: 152.53px;
 }
 
+.logoButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0;
+}
+
+.logoButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .title {
   align-items: center;
   color: var(--color-black);

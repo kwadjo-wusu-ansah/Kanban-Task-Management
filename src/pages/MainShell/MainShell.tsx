@@ -66,6 +66,7 @@ function MainShell({ activeBoardId = '', children, title }: MainShellProps) {
           onBoardSelect={handleBoardSelect}
           onCreateBoard={() => navigate('/')}
           onHideSidebar={() => setIsSidebarHidden(true)}
+          onLogoClick={() => navigate('/')}
           onShowSidebar={() => setIsSidebarHidden(false)}
           onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
           theme={mode}
@@ -81,6 +82,7 @@ function MainShell({ activeBoardId = '', children, title }: MainShellProps) {
           mode={mode}
           onBoardSelect={handleBoardSelect}
           onCreateBoard={() => navigate('/')}
+          onLogoClick={() => navigate('/')}
           onMobileMenuClose={() => setIsMobileBoardsMenuOpen(false)}
           onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
           theme={mode}
@@ -95,6 +97,7 @@ function MainShell({ activeBoardId = '', children, title }: MainShellProps) {
           isMobile={isMobileViewport}
           mode={mode}
           onBoardSwitcherToggle={() => setIsMobileBoardsMenuOpen((previousOpenState) => !previousOpenState)}
+          onLogoClick={() => navigate('/')}
           sidebarVisible={isHeaderSidebarVisible}
         />
         <section className={classNames(appStyles.boardCanvas, mode === 'dark' ? appStyles.boardCanvasDark : appStyles.boardCanvasLight)}>

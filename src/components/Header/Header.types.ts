@@ -14,6 +14,7 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   onBoardSwitcherToggle?: () => void
   onDeleteBoard?: () => void
   onEditBoard?: () => void
+  onLogoClick?: () => void
   onMenuClose?: () => void
   onMenuOpen?: () => void
   sidebarVisible?: boolean

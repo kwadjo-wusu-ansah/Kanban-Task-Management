@@ -28,6 +28,7 @@ function Header({
   onBoardSwitcherToggle,
   onDeleteBoard,
   onEditBoard,
+  onLogoClick,
   onMenuClose,
   onMenuOpen,
   sidebarVisible = true,
@@ -72,7 +73,17 @@ function Header({
       {...props}
     >
       <div className={styles.leadingGroup}>
-        {shouldShowLogo ? <div className={styles.logoSlot}><img alt="Kanban" className={styles.logo} src={getLogoSource(mode, isMobile)} /></div> : null}
+        {shouldShowLogo ? (
+          <div className={styles.logoSlot}>
+            {onLogoClick ? (
+              <button aria-label="Go to dashboard" className={styles.logoButton} onClick={onLogoClick} type="button">
+                <img alt="Kanban" className={styles.logo} src={getLogoSource(mode, isMobile)} />
+              </button>
+            ) : (
+              <img alt="Kanban" className={styles.logo} src={getLogoSource(mode, isMobile)} />
+            )}
+          </div>
+        ) : null}
         {isMobile ? (
           <h1 className={classNames(styles.title, styles.titleMobile)}>
             <button
