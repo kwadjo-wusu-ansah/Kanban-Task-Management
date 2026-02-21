@@ -73,3 +73,22 @@
 .addColumnLane > * {
   min-block-size: 100%;
 }
+
+@media (min-width: 788px) and (max-width: 1023px) {
+  .boardCanvas {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .columnsScroller {
+    gap: var(--space-5);
+  }
+
+  .addColumnLane {
+    block-size: calc(100vh - 129px);
+  }
+
+  .emptyStateWrapper {
+    justify-content: flex-start;
+    padding: 304px var(--space-6) var(--space-6);
+  }
+}

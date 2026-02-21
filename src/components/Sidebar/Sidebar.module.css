@@ -56,7 +56,7 @@
   display: inline-flex;
   font-size: var(--text-heading-m-size);
   font-weight: 700;
-  inline-size: 276px;
+  inline-size: calc(100% - 24px);
   padding-inline: 32px;
   text-align: left;
 }
@@ -175,7 +175,7 @@
   display: inline-flex;
   font-size: var(--text-heading-m-size);
   font-weight: 700;
-  inline-size: 276px;
+  inline-size: calc(100% - 24px);
   padding-inline-start: 31px;
   text-align: left;
 }
@@ -231,4 +231,45 @@
 .showIcon {
   block-size: 10.22px;
   inline-size: 16px;
+}
+
+@media (min-width: 788px) and (max-width: 1023px) {
+  .sidebar {
+    inline-size: 260px;
+    padding-block-start: 32px;
+  }
+
+  .logo {
+    margin-inline-start: 26px;
+  }
+
+  .boardsGroup {
+    margin-block-start: 54px;
+  }
+
+  .boardsLabel {
+    margin-inline-start: 24px;
+  }
+
+  .boardItemButton {
+    inline-size: 240px;
+    padding-inline: 24px;
+  }
+
+  .bottomSection {
+    padding-block-end: 32px;
+  }
+
+  .themeToggle {
+    margin: 0 13px 8px;
+  }
+
+  .hideButton {
+    inline-size: 240px;
+    padding-inline-start: 24px;
+  }
+
+  .showButton {
+    inset-block-end: 32px;
+  }
 }

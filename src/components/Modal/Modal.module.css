@@ -300,6 +300,17 @@
   line-height: var(--line-height-compact);
 }
 
+@media (min-width: 788px) and (max-width: 1023px) {
+  .backdrop {
+    padding: var(--space-6);
+  }
+
+  .panel {
+    inline-size: min(100%, 480px);
+    max-block-size: calc(100vh - 48px);
+  }
+}
+
 @media (max-width: 640px) {
   .panel {
     gap: var(--space-5);

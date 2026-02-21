@@ -25,3 +25,14 @@
 .actionButton {
   min-inline-size: 174px;
 }
+
+@media (min-width: 788px) and (max-width: 1023px) {
+  .root {
+    inline-size: min(100%, 459px);
+    max-inline-size: 459px;
+  }
+
+  .message {
+    max-inline-size: 459px;
+  }
+}

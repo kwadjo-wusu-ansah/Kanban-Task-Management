@@ -153,3 +153,32 @@
 .menuActionDanger {
   color: var(--color-red);
 }
+
+@media (min-width: 788px) and (max-width: 1023px) {
+  .header {
+    block-size: 81px;
+  }
+
+  .sidebarVisible {
+    padding-inline: var(--space-6);
+  }
+
+  .sidebarHidden {
+    padding-inline-end: var(--space-6);
+  }
+
+  .logoSlot {
+    block-size: 81px;
+    inline-size: 260px;
+    padding-inline-start: var(--space-6);
+  }
+
+  .title {
+    font-size: 20px;
+    padding-inline-start: var(--space-6);
+  }
+
+  .actions {
+    gap: var(--space-6);
+  }
+}
