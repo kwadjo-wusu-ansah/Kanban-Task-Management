@@ -54,13 +54,20 @@
 }
 
 .title {
+  align-items: center;
   color: var(--color-black);
+  display: flex;
   font-size: var(--text-heading-xl-size);
   font-weight: 700;
+  gap: var(--space-2);
   line-height: var(--line-height-compact);
   margin: 0;
   overflow: hidden;
   padding-inline-start: var(--space-8);
+}
+
+.titleText {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -83,6 +90,19 @@
 .addTaskButton {
   inline-size: 164px;
   min-inline-size: 164px;
+}
+
+.addTaskButtonMobile {
+  block-size: 32px;
+  border-radius: 16px;
+  inline-size: 48px;
+  min-inline-size: 48px;
+  padding-inline: 0;
+}
+
+.addTaskMobileIcon {
+  block-size: 12px;
+  inline-size: 12px;
 }
 
 .menuRegion {
@@ -154,6 +174,16 @@
   color: var(--color-red);
 }
 
+.boardChevron {
+  block-size: 7px;
+  flex: 0 0 auto;
+  inline-size: 10px;
+}
+
+.titleMobile {
+  font-size: var(--text-heading-l-size);
+}
+
 @media (min-width: 788px) and (max-width: 1023px) {
   .header {
     block-size: 81px;
@@ -184,5 +214,43 @@
 
   .actions {
     gap: var(--space-6);
+  }
+}
+
+@media (max-width: 787px) {
+  .header {
+    block-size: 64px;
+  }
+
+  .sidebarHidden {
+    padding-inline-end: var(--space-4);
+  }
+
+  .logoSlot {
+    block-size: 64px;
+    border-inline-end: 0;
+    inline-size: auto;
+    padding-inline: var(--space-4) var(--space-3);
+  }
+
+  .logo {
+    block-size: 25px;
+    inline-size: 24px;
+  }
+
+  .title {
+    font-size: var(--text-heading-l-size);
+    gap: 6px;
+    max-inline-size: 170px;
+    padding-inline-start: 0;
+  }
+
+  .actions {
+    gap: var(--space-4);
+  }
+
+  .menu {
+    inset-block-start: calc(100% + var(--space-2));
+    inset-inline-end: 0;
   }
 }

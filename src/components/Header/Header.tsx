@@ -1,20 +1,25 @@
 import { useEffect, useRef } from 'react'
-import { iconVerticalEllipsis, logoDark, logoLight } from '../../assets'
+import { iconAddTaskMobile, iconChevronDown, iconVerticalEllipsis, logoDark, logoLight, logoMobile } from '../../assets'
 import { classNames } from '../../utils'
 import { Button } from '../Button'
 import styles from './Header.module.css'
 import type { HeaderMode, HeaderProps } from './Header.types'
 
-// Resolves the correct desktop logo source from the selected header mode.
-function getLogoSource(mode: HeaderMode): string {
+// Resolves the correct logo source from mode and mobile header layout.
+function getLogoSource(mode: HeaderMode, isMobile: boolean): string {
+  if (isMobile) {
+    return logoMobile
+  }
+
   return mode === 'dark' ? logoLight : logoDark
 }
 
-// Renders a reusable board header for light/dark mode and sidebar-visible layouts.
+// Renders a reusable board header for desktop/tablet and compact mobile layouts.
 function Header({
   addTaskLabel = '+ Add New Task',
   boardName,
   className,
+  isMobile = false,
   isAddTaskDisabled = false,
   isMenuOpen = false,
   mode = 'light',
@@ -26,7 +31,7 @@ function Header({
   sidebarVisible = true,
   ...props
 }: HeaderProps) {
-  const shouldShowLogo = !sidebarVisible
+  const shouldShowLogo = isMobile || !sidebarVisible
   const menuRegionRef = useRef<HTMLDivElement | null>(null)
 
   // Closes the board action menu when clicks happen outside the menu trigger region.
@@ -65,13 +70,23 @@ function Header({
       {...props}
     >
       <div className={styles.leadingGroup}>
-        {shouldShowLogo ? <div className={styles.logoSlot}><img alt="Kanban" className={styles.logo} src={getLogoSource(mode)} /></div> : null}
-        <h1 className={styles.title}>{boardName}</h1>
+        {shouldShowLogo ? <div className={styles.logoSlot}><img alt="Kanban" className={styles.logo} src={getLogoSource(mode, isMobile)} /></div> : null}
+        <h1 className={classNames(styles.title, isMobile && styles.titleMobile)}>
+          <span className={styles.titleText}>{boardName}</span>
+          {isMobile ? <img alt="" aria-hidden="true" className={styles.boardChevron} src={iconChevronDown} /> : null}
+        </h1>
       </div>
 
       <div className={styles.actions}>
-        <Button className={styles.addTaskButton} disabled={isAddTaskDisabled} onClick={onAddTask} size="large" variant="primary">
-          {addTaskLabel}
+        <Button
+          aria-label={isMobile ? addTaskLabel : undefined}
+          className={classNames(styles.addTaskButton, isMobile && styles.addTaskButtonMobile)}
+          disabled={isAddTaskDisabled}
+          onClick={onAddTask}
+          size="large"
+          variant="primary"
+        >
+          {isMobile ? <img alt="" aria-hidden="true" className={styles.addTaskMobileIcon} src={iconAddTaskMobile} /> : addTaskLabel}
         </Button>
         <div className={styles.menuRegion} ref={menuRegionRef}>
           <button aria-label="Open board actions" className={styles.menuButton} onClick={onMenuOpen} type="button">

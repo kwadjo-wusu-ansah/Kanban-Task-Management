@@ -311,7 +311,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 787px) {
   .panel {
     gap: var(--space-5);
     inline-size: min(100%, 343px);

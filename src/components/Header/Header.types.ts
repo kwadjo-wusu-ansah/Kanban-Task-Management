@@ -5,6 +5,7 @@ export type HeaderMode = 'light' | 'dark'
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   addTaskLabel?: string
   boardName: string
+  isMobile?: boolean
   isAddTaskDisabled?: boolean
   isMenuOpen?: boolean
   mode?: HeaderMode

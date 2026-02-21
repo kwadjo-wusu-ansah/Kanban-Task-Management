@@ -92,3 +92,23 @@
     padding: 304px var(--space-6) var(--space-6);
   }
 }
+
+@media (max-width: 787px) {
+  .boardCanvas {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+  }
+
+  .columnsScroller {
+    gap: var(--space-4);
+  }
+
+  .addColumnLane {
+    block-size: calc(100vh - 112px);
+    inline-size: 280px;
+    padding-block-start: var(--space-10);
+  }
+
+  .emptyStateWrapper {
+    padding: 0 var(--space-6);
+  }
+}

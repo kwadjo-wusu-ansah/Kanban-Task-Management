@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { boardPreviews } from './data'
 import type { BoardPreview, BoardTaskPreview } from './data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from './components'
@@ -16,6 +16,7 @@ const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee
 const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
 const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
 const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
+const MOBILE_BREAKPOINT = 788
 
 let nextClientId = 0
 
@@ -146,10 +147,11 @@ function buildDeleteTaskDescription(taskName: string): string {
 
 const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
-// Renders the desktop board app shell in populated and empty states for both themes.
+// Renders the responsive board app shell in populated and empty states for both themes.
 function App() {
   const [mode, setMode] = useState<SidebarMode>('light')
   const [isSidebarHidden, setIsSidebarHidden] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
   const [boardsData, setBoardsData] = useState<BoardPreview[]>(boardPreviews.length > 0 ? boardPreviews : fallbackBoardPreviews)
   const boards = buildSidebarBoards(boardsData)
   const [activeBoardId, setActiveBoardId] = useState(boards[0]?.id ?? fallbackBoards[0].id)
@@ -210,6 +212,24 @@ function App() {
   const statusOptions = buildStatusOptions(activeBoard)
   const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
   const deleteTaskDescription = buildDeleteTaskDescription(deletingTaskName || activeTask?.title || '')
+  const shouldRenderSidebar = !isMobileViewport
+  const isHeaderSidebarVisible = shouldRenderSidebar && !isSidebarHidden
+
+  // Tracks the mobile breakpoint so the app can switch between desktop sidebar and mobile header layouts.
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+
+    function handleMobileBreakpointChange(event: MediaQueryListEvent) {
+      setIsMobileViewport(event.matches)
+    }
+
+    setIsMobileViewport(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleMobileBreakpointChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMobileBreakpointChange)
+    }
+  }, [])
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
@@ -1073,23 +1093,26 @@ function App() {
 
   return (
     <main className={classNames(styles.app, mode === 'dark' ? styles.appDark : styles.appLight)}>
-      <Sidebar
-        activeBoardId={activeBoardId}
-        boardCount={boardCount}
-        boards={boards}
-        hidden={isSidebarHidden}
-        mode={mode}
-        onBoardSelect={handleBoardSelect}
-        onCreateBoard={handleAddBoardOpen}
-        onHideSidebar={() => setIsSidebarHidden(true)}
-        onShowSidebar={() => setIsSidebarHidden(false)}
-        onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
-        theme={mode}
-      />
+      {shouldRenderSidebar ? (
+        <Sidebar
+          activeBoardId={activeBoardId}
+          boardCount={boardCount}
+          boards={boards}
+          hidden={isSidebarHidden}
+          mode={mode}
+          onBoardSelect={handleBoardSelect}
+          onCreateBoard={handleAddBoardOpen}
+          onHideSidebar={() => setIsSidebarHidden(true)}
+          onShowSidebar={() => setIsSidebarHidden(false)}
+          onThemeToggle={() => setMode((previousMode) => (previousMode === 'dark' ? 'light' : 'dark'))}
+          theme={mode}
+        />
+      ) : null}
 
       <div className={styles.contentArea}>
         <Header
           boardName={activeBoardName}
+          isMobile={isMobileViewport}
           isAddTaskDisabled={!hasColumns}
           isMenuOpen={isBoardMenuOpen}
           mode={mode}
@@ -1098,7 +1121,7 @@ function App() {
           onEditBoard={handleEditBoardOpen}
           onMenuClose={handleBoardMenuClose}
           onMenuOpen={handleBoardMenuToggle}
-          sidebarVisible={!isSidebarHidden}
+          sidebarVisible={isHeaderSidebarVisible}
         />
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
           {hasColumns ? (
