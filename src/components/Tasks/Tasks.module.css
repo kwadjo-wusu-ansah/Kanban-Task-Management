@@ -4,6 +4,12 @@
   inline-size: 280px;
 }
 
+.columnDropTarget {
+  border-radius: var(--radius-8);
+  outline: 2px dashed rgba(99, 95, 199, 0.4);
+  outline-offset: 8px;
+}
+
 .headingRow {
   align-items: center;
   display: flex;
@@ -36,4 +42,8 @@
 
 .taskRow {
   inline-size: 280px;
+}
+
+.taskRowDragging {
+  opacity: 0.72;
 }

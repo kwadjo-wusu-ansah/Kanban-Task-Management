@@ -1,3 +1,5 @@
+import type { DragEndEvent } from '@dnd-kit/core'
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import type { BoardPreview, BoardTaskPreview } from '../../data'
@@ -18,7 +20,7 @@ import {
   taskMoved,
   taskUpdated,
 } from '../../store/slices'
-import { classNames } from '../../utils'
+import { classNames, fromColumnDragId, fromTaskDragId } from '../../utils'
 import styles from '../../App.module.css'
 
 const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
@@ -85,6 +87,15 @@ function getActiveTask(board: BoardPreview | undefined, taskId: string | null): 
   }
 
   return board.columns.flatMap((column) => column.tasks).find((task) => task.id === taskId)
+}
+
+// Resolves the board column that currently owns the provided task ID.
+function getTaskColumn(board: BoardPreview | undefined, taskId: string): BoardPreview['columns'][number] | undefined {
+  if (!board) {
+    return undefined
+  }
+
+  return board.columns.find((column) => column.tasks.some((task) => task.id === taskId))
 }
 
 // Builds status dropdown options from the active board column names.
@@ -208,6 +219,13 @@ function BoardView() {
   const deleteTaskDescription = buildDeleteTaskDescription(deletingTaskName || activeTask?.title || '')
   const shouldRenderSidebar = !isMobileViewport
   const isHeaderSidebarVisible = shouldRenderSidebar && !isSidebarHidden
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  )
 
   // Keeps component board state aligned with URL params and redirects invalid board IDs.
   useEffect(() => {
@@ -376,6 +394,73 @@ function BoardView() {
 
     resetDeleteBoardState()
     resetDeleteTaskState()
+  }
+
+  // Handles task drag completion and dispatches cross-column or in-column task moves.
+  function handleTaskDragEnd(event: DragEndEvent) {
+    if (!activeBoard || !event.over) {
+      return
+    }
+
+    const activeTaskId = fromTaskDragId(String(event.active.id))
+
+    if (!activeTaskId) {
+      return
+    }
+
+    const sourceColumn = getTaskColumn(activeBoard, activeTaskId)
+
+    if (!sourceColumn) {
+      return
+    }
+
+    const overDragId = String(event.over.id)
+    const overTaskId = fromTaskDragId(overDragId)
+    const overColumnId = fromColumnDragId(overDragId)
+    let destinationColumnId: string | undefined
+    let destinationIndex = -1
+
+    if (overTaskId) {
+      const destinationColumn = getTaskColumn(activeBoard, overTaskId)
+
+      if (!destinationColumn) {
+        return
+      }
+
+      destinationColumnId = destinationColumn.id
+      destinationIndex = destinationColumn.tasks.findIndex((task) => task.id === overTaskId)
+    } else if (overColumnId) {
+      const destinationColumn = activeBoard.columns.find((column) => column.id === overColumnId)
+
+      if (!destinationColumn) {
+        return
+      }
+
+      destinationColumnId = destinationColumn.id
+      destinationIndex = destinationColumn.tasks.length
+    }
+
+    if (!destinationColumnId || destinationIndex < 0) {
+      return
+    }
+
+    const sourceTaskIndex = sourceColumn.tasks.findIndex((task) => task.id === activeTaskId)
+
+    if (sourceTaskIndex < 0) {
+      return
+    }
+
+    if (sourceColumn.id === destinationColumnId && sourceTaskIndex === destinationIndex) {
+      return
+    }
+
+    dispatch(
+      taskMoved({
+        destinationColumnId,
+        index: destinationIndex,
+        taskId: activeTaskId,
+      }),
+    )
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -1233,20 +1318,22 @@ function BoardView() {
         />
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
           {hasColumns ? (
-            <div className={styles.columnsScroller}>
-              {activeBoard?.columns.map((column, columnIndex) => (
-                <Tasks
-                  accentColor={column.accentColor || COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length]}
-                  columnId={column.id}
-                  key={column.id}
-                  mode={mode}
-                  onTaskSelect={handleTaskSelect}
-                />
-              ))}
-              <div className={styles.addColumnLane}>
-                <AddColumnCard mode={mode} onClick={handleAddColumnOpen} />
+            <DndContext collisionDetection={closestCenter} onDragEnd={handleTaskDragEnd} sensors={dragSensors}>
+              <div className={styles.columnsScroller}>
+                {activeBoard?.columns.map((column, columnIndex) => (
+                  <Tasks
+                    accentColor={column.accentColor || COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length]}
+                    columnId={column.id}
+                    key={column.id}
+                    mode={mode}
+                    onTaskSelect={handleTaskSelect}
+                  />
+                ))}
+                <div className={styles.addColumnLane}>
+                  <AddColumnCard mode={mode} onClick={handleAddColumnOpen} />
+                </div>
               </div>
-            </div>
+            </DndContext>
           ) : (
             <div className={styles.emptyStateWrapper}>
               <EmptyBoardState mode={mode} onAddColumn={handleAddColumnOpen} />
