@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { MainShell } from '../MainShell'
-import { boardPreviews } from '../../data'
+import { useAppSelector } from '../../store/hooks'
+import { selectBoardPreviews } from '../../store/selectors'
 import styles from './Dashboard.module.css'
 
 // Computes total task count for dashboard board summary cards.
@@ -13,6 +14,8 @@ function getTaskCount(columnCount: number, taskCount: number): string {
 
 // Renders the dashboard route listing all available boards with dynamic links.
 function Dashboard() {
+  const boardPreviews = useAppSelector(selectBoardPreviews)
+
   return (
     <MainShell title="Dashboard">
       <p className={styles.intro}>Select a board to open its tasks and columns.</p>

@@ -1,4 +1,5 @@
 import { TaskCard } from '../TaskCard'
+import { useAppSelector } from '../../store/hooks'
 import { classNames } from '../../utils'
 import styles from './Tasks.module.css'
 import type { TasksProps } from './Tasks.types'
@@ -16,30 +17,33 @@ function formatHeadingLabel(heading: string, taskCount: number): string {
 function Tasks({
   accentColor = 'var(--color-primary)',
   className,
-  heading,
+  columnId,
   mode = 'light',
   onTaskSelect,
-  taskCount,
-  tasks,
   ...props
 }: TasksProps) {
-  const resolvedTaskCount = typeof taskCount === 'number' ? taskCount : tasks.length
+  const column = useAppSelector((state) => state.kanban.columns[columnId])
+  const taskIds = column?.taskIds ?? []
+  const heading = column?.name ?? 'Untitled'
+  const resolvedTaskCount = taskIds.length
+
+  if (!column) {
+    return null
+  }
 
   return (
     <section className={classNames(styles.root, className)} {...props}>
       <header className={styles.headingRow}>
-        <span aria-hidden="true" className={styles.headingDot} style={{ backgroundColor: accentColor }} />
+        <span aria-hidden="true" className={styles.headingDot} style={{ backgroundColor: accentColor || column.accentColor }} />
         <h2 className={styles.headingText}>{formatHeadingLabel(heading, resolvedTaskCount)}</h2>
       </header>
       <ul className={styles.tasksList}>
-        {tasks.map((task) => (
-          <li className={styles.taskRow} key={task.id}>
+        {taskIds.map((taskId) => (
+          <li className={styles.taskRow} key={taskId}>
             <TaskCard
-              completedSubtaskCount={task.completedSubtaskCount}
               mode={mode}
-              onClick={onTaskSelect ? () => onTaskSelect(task.id) : undefined}
-              title={task.title}
-              totalSubtaskCount={task.totalSubtaskCount}
+              onClick={onTaskSelect ? () => onTaskSelect(taskId) : undefined}
+              taskId={taskId}
             />
           </li>
         ))}

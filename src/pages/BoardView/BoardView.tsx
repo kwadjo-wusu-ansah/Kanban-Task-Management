@@ -1,23 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { boardPreviews } from '../../data'
 import type { BoardPreview, BoardTaskPreview } from '../../data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
-import type { DropdownOption, ModalItem, SidebarBoard, SidebarMode } from '../../components'
+import type { DropdownOption, ModalItem, SidebarMode } from '../../components'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
+import {
+  boardColumnsReordered,
+  boardCreated,
+  boardRemoved,
+  boardUpdated,
+  columnCreated,
+  columnRemoved,
+  columnUpdated,
+  taskAdded,
+  taskDeleted,
+  taskMoved,
+  taskUpdated,
+} from '../../store/slices'
 import { classNames } from '../../utils'
 import styles from '../../App.module.css'
-
-const fallbackBoards: SidebarBoard[] = [
-  { id: 'platform-launch', name: 'Platform Launch' },
-  { id: 'marketing-plan', name: 'Marketing Plan' },
-  { id: 'roadmap', name: 'Roadmap' },
-]
 
 const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
 const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
 const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
 const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
 const MOBILE_BREAKPOINT = 788
+const FALLBACK_BOARD_NAME = 'Platform Launch'
 
 let nextClientId = 0
 
@@ -61,23 +70,6 @@ function mapTaskSubtasksToEditableItems(task: BoardTaskPreview): ModalItem[] {
     checked: subtask.isCompleted,
     id: subtask.id,
     value: subtask.title,
-  }))
-}
-
-// Builds fallback board previews so the app shell still renders when data is unavailable.
-function buildFallbackBoardPreviews(boards: SidebarBoard[]): BoardPreview[] {
-  return boards.map((board) => ({
-    columns: [],
-    id: board.id,
-    name: board.name,
-  }))
-}
-
-// Maps board previews into sidebar entries used by the Sidebar component.
-function buildSidebarBoards(boards: BoardPreview[]): SidebarBoard[] {
-  return boards.map((board) => ({
-    id: board.id,
-    name: board.name,
   }))
 }
 
@@ -146,18 +138,17 @@ function buildDeleteTaskDescription(taskName: string): string {
   return `Are you sure you want to delete the '${taskName}' task and its subtasks? This action cannot be reversed.`
 }
 
-const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
-
 // Renders the board view screen and syncs the active board with route params.
 function BoardView() {
   const { boardId, taskId } = useParams()
+  const dispatch = useAppDispatch()
+  const boardPreviews = useAppSelector(selectBoardPreviews)
+  const boards = useAppSelector(selectSidebarBoards)
   const navigate = useNavigate()
   const [mode, setMode] = useState<SidebarMode>('light')
   const [isSidebarHidden, setIsSidebarHidden] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
-  const [boardsData, setBoardsData] = useState<BoardPreview[]>(boardPreviews.length > 0 ? boardPreviews : fallbackBoardPreviews)
-  const boards = buildSidebarBoards(boardsData)
-  const activeBoardId = boardId ?? boards[0]?.id ?? fallbackBoards[0].id
+  const activeBoardId = boardId ?? boards[0]?.id ?? ''
 
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [isViewStatusMenuOpen, setIsViewStatusMenuOpen] = useState(false)
@@ -207,9 +198,9 @@ function BoardView() {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
   const [deletingTaskName, setDeletingTaskName] = useState('')
 
-  const activeBoard = getActiveBoard(boardsData, activeBoardId)
+  const activeBoard = getActiveBoard(boardPreviews, activeBoardId)
   const activeTask = getActiveTask(activeBoard, taskId ?? null)
-  const activeBoardName = activeBoard?.name ?? fallbackBoards[0].name
+  const activeBoardName = activeBoard?.name ?? FALLBACK_BOARD_NAME
   const hasColumns = (activeBoard?.columns.length ?? 0) > 0
   const boardCount = boards.length
   const statusOptions = buildStatusOptions(activeBoard)
@@ -221,24 +212,24 @@ function BoardView() {
   // Keeps component board state aligned with URL params and redirects invalid board IDs.
   useEffect(() => {
     if (!boardId) {
-      if (boardsData[0]) {
-        navigate(`/board/${boardsData[0].id}`, { replace: true })
+      if (boardPreviews[0]) {
+        navigate(`/board/${boardPreviews[0].id}`, { replace: true })
       }
       return
     }
 
-    const hasMatchingBoard = boardsData.some((board) => board.id === boardId)
+    const hasMatchingBoard = boardPreviews.some((board) => board.id === boardId)
 
     if (!hasMatchingBoard) {
-      if (boardsData[0]) {
-        navigate(`/board/${boardsData[0].id}`, { replace: true })
+      if (boardPreviews[0]) {
+        navigate(`/board/${boardPreviews[0].id}`, { replace: true })
       } else {
         navigate('/', { replace: true })
       }
       return
     }
 
-  }, [boardId, boardsData, navigate])
+  }, [boardId, boardPreviews, navigate])
 
   // Syncs task modal state with nested task route params and redirects unknown tasks.
   useEffect(() => {
@@ -296,6 +287,11 @@ function BoardView() {
 
   // Navigates to the current board route while clearing any nested task segment.
   function navigateToBoardRoute(replace = false) {
+    if (!activeBoardId) {
+      navigate('/', { replace })
+      return
+    }
+
     if (replace) {
       navigate(`/board/${activeBoardId}`, { replace: true })
       return
@@ -353,7 +349,7 @@ function BoardView() {
 
   // Handles sidebar board changes and closes all open task modals and menus.
   function handleBoardSelect(nextBoardId: string) {
-    const nextBoard = getActiveBoard(boardsData, nextBoardId)
+    const nextBoard = getActiveBoard(boardPreviews, nextBoardId)
     const nextStatusOptions = buildStatusOptions(nextBoard)
 
     navigate(`/board/${nextBoardId}`)
@@ -604,17 +600,17 @@ function BoardView() {
     setIsEditBoardModalOpen(true)
   }
 
-  // Deletes the selected board locally and switches to the first remaining board.
+  // Deletes the selected board in the store and switches to the first remaining board.
   function handleDeleteBoardConfirm() {
     if (!deletingBoardId) {
       return
     }
 
-    const remainingBoards = boardsData.filter((board) => board.id !== deletingBoardId)
+    const nextBoardId = boardPreviews.find((board) => board.id !== deletingBoardId)?.id
+    dispatch(boardRemoved({ boardId: deletingBoardId }))
 
-    setBoardsData(remainingBoards)
-    if (remainingBoards[0]) {
-      navigate(`/board/${remainingBoards[0].id}`, { replace: true })
+    if (nextBoardId) {
+      navigate(`/board/${nextBoardId}`, { replace: true })
     } else {
       navigate('/', { replace: true })
     }
@@ -643,15 +639,42 @@ function BoardView() {
     resetEditBoardForm()
   }
 
-  // Toggles a subtask checkbox locally inside the open view-task modal.
+  // Toggles a subtask checkbox and persists the updated completion state in the store.
   function handleViewTaskSubtaskToggle(subtaskId: string) {
-    setViewSubtasks((previousSubtasks) =>
-      previousSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, checked: !subtask.checked } : subtask)),
+    if (!activeTask) {
+      return
+    }
+
+    const nextSubtasks = viewSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, checked: !subtask.checked } : subtask))
+
+    setViewSubtasks(nextSubtasks)
+    dispatch(
+      taskUpdated({
+        changes: {
+          subtasks: nextSubtasks.map((subtask) => ({
+            id: subtask.id,
+            isCompleted: Boolean(subtask.checked),
+            title: subtask.value,
+          })),
+        },
+        taskId: activeTask.id,
+      }),
     )
   }
 
-  // Selects a new task status locally and collapses the view-task dropdown menu.
+  // Selects a new task status and moves the task to the matching column.
   function handleViewTaskStatusSelect(nextStatusValue: string) {
+    if (!activeBoard || !activeTask) {
+      setIsViewStatusMenuOpen(false)
+      return
+    }
+
+    const targetColumn = activeBoard.columns.find((column) => column.name === nextStatusValue)
+
+    if (targetColumn && nextStatusValue !== activeTask.status) {
+      dispatch(taskMoved({ destinationColumnId: targetColumn.id, taskId: activeTask.id }))
+    }
+
     setViewStatusValue(nextStatusValue)
     setIsViewStatusMenuOpen(false)
   }
@@ -720,27 +743,13 @@ function BoardView() {
     resetDeleteTaskState()
   }
 
-  // Deletes the selected task locally from the active board context.
+  // Deletes the selected task from the store and closes task-level overlays.
   function handleDeleteTaskConfirm() {
     if (!deletingTaskId || !deletingTaskBoardId) {
       return
     }
 
-    setBoardsData((previousBoards) =>
-      previousBoards.map((board) => {
-        if (board.id !== deletingTaskBoardId) {
-          return board
-        }
-
-        return {
-          ...board,
-          columns: board.columns.map((column) => ({
-            ...column,
-            tasks: column.tasks.filter((task) => task.id !== deletingTaskId),
-          })),
-        }
-      }),
-    )
+    dispatch(taskDeleted({ taskId: deletingTaskId }))
 
     setIsTaskMenuOpen(false)
     setIsViewStatusMenuOpen(false)
@@ -789,7 +798,7 @@ function BoardView() {
     setIsAddStatusMenuOpen(false)
   }
 
-  // Creates a new task at the bottom of the selected status column.
+  // Creates a new task in the store at the bottom of the selected status column.
   function handleCreateTask() {
     if (!activeBoard) {
       return
@@ -822,39 +831,21 @@ function BoardView() {
     }
 
     const nextTaskId = createClientId('task')
-    const nextTask: BoardTaskPreview = {
-      completedSubtaskCount: 0,
-      description: addTaskDescription.trim(),
-      id: nextTaskId,
-      status: targetColumn.name,
-      subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
-        id: subtask.id || `${nextTaskId}-subtask-${subtaskIndex}`,
-        isCompleted: false,
-        title: subtask.title,
-      })),
-      title: normalizedTitle,
-      totalSubtaskCount: normalizedSubtasks.length,
-    }
-
-    setBoardsData((previousBoards) =>
-      previousBoards.map((board) => {
-        if (board.id !== activeBoard.id) {
-          return board
-        }
-
-        return {
-          ...board,
-          columns: board.columns.map((column) => {
-            if (column.id !== targetColumn.id) {
-              return column
-            }
-
-            return {
-              ...column,
-              tasks: [...column.tasks, nextTask],
-            }
-          }),
-        }
+    dispatch(
+      taskAdded({
+        boardId: activeBoard.id,
+        columnId: targetColumn.id,
+        task: {
+          description: addTaskDescription.trim(),
+          id: nextTaskId,
+          status: targetColumn.name,
+          subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
+            id: subtask.id || `${nextTaskId}-subtask-${subtaskIndex}`,
+            isCompleted: false,
+            title: subtask.title,
+          })),
+          title: normalizedTitle,
+        },
       }),
     )
 
@@ -872,7 +863,7 @@ function BoardView() {
     }
   }
 
-  // Creates a new column at the end of the active board column list.
+  // Creates a new column in the store at the end of the active board column list.
   function handleCreateColumn() {
     if (!activeBoard) {
       return
@@ -886,23 +877,14 @@ function BoardView() {
     }
 
     const nextColumnIndex = activeBoard.columns.length
-    const nextColumn = {
-      accentColor: COLUMN_ACCENT_COLORS[nextColumnIndex % COLUMN_ACCENT_COLORS.length],
-      id: createClientId('column'),
-      name: normalizedColumnName,
-      tasks: [],
-    }
-
-    setBoardsData((previousBoards) =>
-      previousBoards.map((board) => {
-        if (board.id !== activeBoard.id) {
-          return board
-        }
-
-        return {
-          ...board,
-          columns: [...board.columns, nextColumn],
-        }
+    dispatch(
+      columnCreated({
+        boardId: activeBoard.id,
+        column: {
+          accentColor: COLUMN_ACCENT_COLORS[nextColumnIndex % COLUMN_ACCENT_COLORS.length],
+          id: createClientId('column'),
+          name: normalizedColumnName,
+        },
       }),
     )
 
@@ -936,7 +918,7 @@ function BoardView() {
     )
   }
 
-  // Creates a new board locally, blocking duplicate board names and allowing empty column rows.
+  // Creates a new board in the store, blocking duplicate board names and allowing empty column rows.
   function handleCreateBoard() {
     const normalizedBoardName = addBoardName.trim()
 
@@ -945,7 +927,7 @@ function BoardView() {
       return
     }
 
-    if (hasDuplicateBoardName(boardsData, normalizedBoardName)) {
+    if (hasDuplicateBoardName(boardPreviews, normalizedBoardName)) {
       setAddBoardNameError('Board name already exists')
       return
     }
@@ -955,19 +937,18 @@ function BoardView() {
       .filter((columnName) => columnName.length > 0)
 
     const nextBoardId = createClientId('board')
-    const nextBoard: BoardPreview = {
-      columns: normalizedColumnNames.map((columnName, columnIndex) => ({
-        accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
-        id: `${nextBoardId}-column-${columnIndex}`,
-        name: columnName,
-        tasks: [],
-      })),
-      id: nextBoardId,
-      name: normalizedBoardName,
-    }
-
-    setBoardsData((previousBoards) => [...previousBoards, nextBoard])
-    navigate(`/board/${nextBoard.id}`)
+    dispatch(
+      boardCreated({
+        boardId: nextBoardId,
+        columns: normalizedColumnNames.map((columnName, columnIndex) => ({
+          accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
+          id: `${nextBoardId}-column-${columnIndex}`,
+          name: columnName,
+        })),
+        name: normalizedBoardName,
+      }),
+    )
+    navigate(`/board/${nextBoardId}`)
     setIsAddBoardModalOpen(false)
     resetAddBoardForm()
   }
@@ -1016,7 +997,7 @@ function BoardView() {
       return
     }
 
-    const boardToEdit = boardsData.find((board) => board.id === editingBoardId)
+    const boardToEdit = boardPreviews.find((board) => board.id === editingBoardId)
 
     if (!boardToEdit) {
       return
@@ -1029,7 +1010,7 @@ function BoardView() {
       return
     }
 
-    if (hasDuplicateBoardName(boardsData, normalizedBoardName, editingBoardId)) {
+    if (hasDuplicateBoardName(boardPreviews, normalizedBoardName, editingBoardId)) {
       setEditBoardNameError('Board name already exists')
       return
     }
@@ -1048,33 +1029,73 @@ function BoardView() {
       return
     }
 
-    const existingColumnsById = new Map(boardToEdit.columns.map((column) => [column.id, column]))
-    const retainedColumnIds = new Set(normalizedColumns.map((column) => column.id).filter((columnId) => existingColumnsById.has(columnId)))
-    const movedTasks = boardToEdit.columns.filter((column) => !retainedColumnIds.has(column.id)).flatMap((column) => column.tasks)
+    if (normalizedColumns.length === 0) {
+      boardToEdit.columns.forEach((column) => {
+        dispatch(columnRemoved({ boardId: editingBoardId, columnId: column.id }))
+      })
+      dispatch(boardColumnsReordered({ boardId: editingBoardId, columnIds: [] }))
+      dispatch(boardUpdated({ boardId: editingBoardId, changes: { name: normalizedBoardName } }))
+      setIsEditBoardModalOpen(false)
+      resetEditBoardForm()
+      return
+    }
 
-    const updatedColumns = normalizedColumns.map((column, columnIndex) => {
-      const existingColumn = existingColumnsById.get(column.id)
-      const baseTasks = existingColumn?.tasks ?? []
-      const columnTasks = columnIndex === 0 ? [...baseTasks, ...movedTasks] : baseTasks
+    const existingColumnIds = new Set(boardToEdit.columns.map((column) => column.id))
+    const nextColumns = normalizedColumns.map((column, columnIndex) => {
+      const isExisting = existingColumnIds.has(column.id)
 
       return {
         accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
-        id: existingColumn?.id ?? createClientId('column'),
+        id: isExisting ? column.id : createClientId('column'),
+        isExisting,
         name: column.name,
-        tasks: columnTasks.map((task) => ({
-          ...task,
-          status: column.name,
-        })),
       }
     })
+    const nextColumnIds = nextColumns.map((column) => column.id)
+    const fallbackColumnId = nextColumnIds[0]
 
-    const updatedBoard: BoardPreview = {
-      ...boardToEdit,
-      columns: updatedColumns,
-      name: normalizedBoardName,
-    }
+    nextColumns.forEach((column, columnIndex) => {
+      if (!column.isExisting) {
+        dispatch(
+          columnCreated({
+            boardId: editingBoardId,
+            column: {
+              accentColor: column.accentColor,
+              id: column.id,
+              name: column.name,
+            },
+            index: columnIndex,
+          }),
+        )
+        return
+      }
 
-    setBoardsData((previousBoards) => previousBoards.map((board) => (board.id === editingBoardId ? updatedBoard : board)))
+      dispatch(
+        columnUpdated({
+          changes: {
+            accentColor: column.accentColor,
+            name: column.name,
+          },
+          columnId: column.id,
+        }),
+      )
+    })
+
+    boardToEdit.columns
+      .map((column) => column.id)
+      .filter((columnId) => !normalizedColumns.some((column) => column.id === columnId))
+      .forEach((columnId) => {
+        dispatch(
+          columnRemoved({
+            boardId: editingBoardId,
+            columnId,
+            targetColumnId: fallbackColumnId,
+          }),
+        )
+      })
+
+    dispatch(boardColumnsReordered({ boardId: editingBoardId, columnIds: nextColumnIds }))
+    dispatch(boardUpdated({ boardId: editingBoardId, changes: { name: normalizedBoardName } }))
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
   }
@@ -1127,21 +1148,19 @@ function BoardView() {
       return
     }
 
-    setBoardsData((previousBoards) =>
-      previousBoards.map((board) => {
-        if (board.id !== activeBoard.id) {
-          return board
-        }
+    const existingTask = activeBoard.columns.flatMap((column) => column.tasks).find((task) => task.id === editingTaskId)
 
-        const existingTask = board.columns.flatMap((column) => column.tasks).find((task) => task.id === editingTaskId)
+    if (!existingTask) {
+      return
+    }
 
-        if (!existingTask) {
-          return board
-        }
+    if (existingTask.status !== targetColumn.name) {
+      dispatch(taskMoved({ destinationColumnId: targetColumn.id, taskId: editingTaskId }))
+    }
 
-        const updatedTask: BoardTaskPreview = {
-          ...existingTask,
-          completedSubtaskCount: normalizedSubtasks.filter((subtask) => Boolean(subtask.checked)).length,
+    dispatch(
+      taskUpdated({
+        changes: {
           description: editTaskDescription.trim(),
           status: targetColumn.name,
           subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
@@ -1150,27 +1169,8 @@ function BoardView() {
             title: subtask.value,
           })),
           title: normalizedTitle,
-          totalSubtaskCount: normalizedSubtasks.length,
-        }
-
-        return {
-          ...board,
-          columns: board.columns.map((column) => {
-            const tasksWithoutEditedTask = column.tasks.filter((task) => task.id !== editingTaskId)
-
-            if (column.id !== targetColumn.id) {
-              return {
-                ...column,
-                tasks: tasksWithoutEditedTask,
-              }
-            }
-
-            return {
-              ...column,
-              tasks: [...tasksWithoutEditedTask, updatedTask],
-            }
-          }),
-        }
+        },
+        taskId: editingTaskId,
       }),
     )
 
@@ -1234,12 +1234,10 @@ function BoardView() {
               {activeBoard?.columns.map((column, columnIndex) => (
                 <Tasks
                   accentColor={column.accentColor || COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length]}
-                  heading={column.name}
+                  columnId={column.id}
                   key={column.id}
                   mode={mode}
                   onTaskSelect={handleTaskSelect}
-                  taskCount={column.tasks.length}
-                  tasks={column.tasks}
                 />
               ))}
               <div className={styles.addColumnLane}>

@@ -97,6 +97,13 @@ export interface DeleteBoardPayload {
   boardId: string
 }
 
+export interface UpdateBoardPayload {
+  boardId: string
+  changes: {
+    name?: string
+  }
+}
+
 export interface CreateColumnPayload {
   boardId: string
   column: {
@@ -111,6 +118,19 @@ export interface DeleteColumnPayload {
   boardId: string
   columnId: string
   targetColumnId?: string
+}
+
+export interface UpdateColumnPayload {
+  changes: {
+    accentColor?: string
+    name?: string
+  }
+  columnId: string
+}
+
+export interface ReorderBoardColumnsPayload {
+  boardId: string
+  columnIds: string[]
 }
 
 // Clones subtasks so reducer writes never retain references from action payloads.
@@ -381,6 +401,20 @@ const kanbanSlice = createSlice({
       }
     },
 
+    // Updates board-level properties such as its display name.
+    boardUpdated(state, action: PayloadAction<UpdateBoardPayload>) {
+      const { boardId, changes } = action.payload
+      const board = state.boards[boardId]
+
+      if (!board) {
+        return
+      }
+
+      if (typeof changes.name === 'string') {
+        board.name = changes.name
+      }
+    },
+
     // Creates a new column in an existing board.
     columnCreated(state, action: PayloadAction<CreateColumnPayload>) {
       const { boardId, column, index } = action.payload
@@ -438,14 +472,60 @@ const kanbanSlice = createSlice({
       removeFromList(state.columnIds, columnId)
       removeFromList(board.columnIds, columnId)
     },
+
+    // Updates column properties and syncs task status when the column name changes.
+    columnUpdated(state, action: PayloadAction<UpdateColumnPayload>) {
+      const { changes, columnId } = action.payload
+      const column = state.columns[columnId]
+
+      if (!column) {
+        return
+      }
+
+      if (typeof changes.accentColor === 'string') {
+        column.accentColor = changes.accentColor
+      }
+
+      if (typeof changes.name === 'string') {
+        const nextName = changes.name
+        column.name = nextName
+        column.taskIds.forEach((taskId) => {
+          const task = state.tasks[taskId]
+
+          if (task) {
+            task.status = nextName
+          }
+        })
+      }
+    },
+
+    // Reorders a board's columns while keeping only columns owned by that board.
+    boardColumnsReordered(state, action: PayloadAction<ReorderBoardColumnsPayload>) {
+      const { boardId, columnIds } = action.payload
+      const board = state.boards[boardId]
+
+      if (!board) {
+        return
+      }
+
+      const nextOrder = columnIds.filter((columnId) => state.columns[columnId]?.boardId === boardId)
+      const remainingColumns = board.columnIds.filter(
+        (columnId) => !nextOrder.includes(columnId) && state.columns[columnId]?.boardId === boardId,
+      )
+
+      board.columnIds = [...nextOrder, ...remainingColumns]
+    },
   },
 })
 
 export const {
+  boardColumnsReordered,
   boardCreated,
   boardRemoved,
+  boardUpdated,
   columnCreated,
   columnRemoved,
+  columnUpdated,
   taskAdded,
   taskDeleted,
   taskMoved,

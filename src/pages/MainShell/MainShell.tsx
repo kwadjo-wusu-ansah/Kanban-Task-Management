@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Header, Sidebar } from '../../components'
-import type { SidebarBoard, SidebarMode } from '../../components'
-import { boardPreviews } from '../../data'
+import type { SidebarMode } from '../../components'
+import { useAppSelector } from '../../store/hooks'
+import { selectSidebarBoards } from '../../store/selectors'
 import { classNames } from '../../utils'
 import appStyles from '../../App.module.css'
 import styles from './MainShell.module.css'
@@ -16,14 +17,6 @@ interface MainShellProps {
   title: string
 }
 
-// Maps board previews into sidebar entries for layout routes.
-function getSidebarBoards(): SidebarBoard[] {
-  return boardPreviews.map((board) => ({
-    id: board.id,
-    name: board.name,
-  }))
-}
-
 // Renders a reusable page shell with shared header/sidebar behavior for routed views.
 function MainShell({ activeBoardId = '', children, title }: MainShellProps) {
   const navigate = useNavigate()
@@ -32,7 +25,7 @@ function MainShell({ activeBoardId = '', children, title }: MainShellProps) {
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
   const [isMobileBoardsMenuOpen, setIsMobileBoardsMenuOpen] = useState(false)
 
-  const boards = useMemo(() => getSidebarBoards(), [])
+  const boards = useAppSelector(selectSidebarBoards)
   const shouldRenderSidebar = !isMobileViewport
   const isHeaderSidebarVisible = shouldRenderSidebar && !isSidebarHidden
 
