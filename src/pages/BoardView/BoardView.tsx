@@ -7,7 +7,7 @@ import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '.
 import type { DropdownOption, ModalItem, SidebarMode } from '../../components'
 import { useHydrateKanbanData } from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
+import { selectApiHydrationError, selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
 import {
   boardColumnsReordered,
   boardCreated,
@@ -154,7 +154,8 @@ function buildDeleteTaskDescription(taskName: string): string {
 function BoardView() {
   const { boardId, taskId } = useParams()
   const dispatch = useAppDispatch()
-  const { apiHydrationStatus } = useHydrateKanbanData()
+  const { apiHydrationStatus, requestHydration } = useHydrateKanbanData()
+  const apiHydrationError = useAppSelector(selectApiHydrationError)
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const boards = useAppSelector(selectSidebarBoards)
   const navigate = useNavigate()
@@ -215,6 +216,8 @@ function BoardView() {
   const activeTask = getActiveTask(activeBoard, taskId ?? null)
   const activeBoardName = activeBoard?.name ?? FALLBACK_BOARD_NAME
   const hasColumns = (activeBoard?.columns.length ?? 0) > 0
+  const isHydrationLoadingWithoutBoards = apiHydrationStatus === 'loading' && boardPreviews.length === 0
+  const hasHydrationErrorWithoutBoards = apiHydrationStatus === 'failed' && boardPreviews.length === 0
   const boardCount = boards.length
   const statusOptions = buildStatusOptions(activeBoard)
   const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
@@ -583,6 +586,11 @@ function BoardView() {
     resetDeleteTaskState()
     setIsAddColumnModalOpen(true)
     resetAddColumnForm()
+  }
+
+  // Retries hydration when a board route is opened before remote data becomes available.
+  function handleRetryBoardHydration() {
+    requestHydration()
   }
 
   // Closes the view-task modal and related menu/dropdown state.
@@ -1321,7 +1329,34 @@ function BoardView() {
           sidebarVisible={isHeaderSidebarVisible}
         />
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
-          {hasColumns ? (
+          {isHydrationLoadingWithoutBoards ? (
+            <div
+              aria-live="polite"
+              className={classNames(
+                styles.boardAsyncState,
+                mode === 'dark' ? styles.boardAsyncStateDark : styles.boardAsyncStateLight,
+              )}
+            >
+              <p className={styles.boardAsyncTitle}>Loading board data...</p>
+              <p className={styles.boardAsyncDescription}>This may take a few seconds on slower network connections.</p>
+            </div>
+          ) : hasHydrationErrorWithoutBoards ? (
+            <div
+              aria-live="assertive"
+              className={classNames(
+                styles.boardAsyncState,
+                styles.boardAsyncErrorState,
+                mode === 'dark' ? styles.boardAsyncStateDark : styles.boardAsyncStateLight,
+              )}
+              role="alert"
+            >
+              <p className={styles.boardAsyncTitle}>We couldn&apos;t load this board yet.</p>
+              <p className={styles.boardAsyncDescription}>{apiHydrationError ?? 'Please check your connection and retry.'}</p>
+              <button className={styles.boardAsyncRetryButton} onClick={handleRetryBoardHydration} type="button">
+                Retry loading board
+              </button>
+            </div>
+          ) : hasColumns ? (
             <DndContext collisionDetection={closestCenter} onDragEnd={handleTaskDragEnd} sensors={dragSensors}>
               <div className={styles.columnsScroller}>
                 {activeBoard?.columns.map((column, columnIndex) => (

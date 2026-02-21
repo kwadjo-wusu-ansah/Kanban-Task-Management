@@ -53,6 +53,75 @@
   padding: var(--space-8);
 }
 
+.boardAsyncState {
+  animation: boardAsyncFadeIn 180ms ease;
+  border-radius: var(--radius-8);
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-inline: auto;
+  max-inline-size: 560px;
+  min-block-size: 100%;
+  padding: var(--space-8);
+}
+
+.boardAsyncStateLight {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.boardAsyncStateDark {
+  background: color-mix(in srgb, var(--color-dark-grey) 88%, var(--color-primary));
+  border: 1px solid color-mix(in srgb, var(--color-primary-hover) 30%, transparent);
+}
+
+.boardAsyncErrorState {
+  background: color-mix(in srgb, var(--color-red) 8%, var(--color-white));
+  border: 1px solid color-mix(in srgb, var(--color-red) 30%, transparent);
+}
+
+.boardAsyncTitle {
+  color: var(--color-black);
+  font-size: var(--text-heading-m-size);
+  font-weight: 700;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.boardAsyncDescription {
+  color: var(--color-medium-grey);
+  font-size: var(--text-body-l-size);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.boardAsyncRetryButton {
+  background: var(--color-primary);
+  border: 0;
+  border-radius: var(--radius-20);
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: var(--text-body-l-size);
+  font-weight: 700;
+  line-height: var(--line-height-body);
+  min-block-size: 40px;
+  padding: 0 var(--space-4);
+}
+
+.boardAsyncRetryButton:hover,
+.boardAsyncRetryButton:focus-visible {
+  background: var(--color-primary-hover);
+}
+
+.appDark .boardAsyncTitle {
+  color: var(--color-white);
+}
+
+.appDark .boardAsyncDescription {
+  color: color-mix(in srgb, var(--color-light-grey) 74%, var(--color-medium-grey));
+}
+
 .columnsScroller {
   align-items: flex-start;
   display: grid;
@@ -72,6 +141,18 @@
 
 .addColumnLane > * {
   min-block-size: 100%;
+}
+
+@keyframes boardAsyncFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (min-width: 788px) and (max-width: 1023px) {

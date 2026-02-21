@@ -7,14 +7,27 @@
 }
 
 .statusMessage {
-  color: var(--color-primary);
+  border-radius: var(--radius-6);
   font-size: var(--text-body-m-size);
   font-weight: 700;
-  line-height: var(--line-height-compact);
-  margin: 0;
+  line-height: var(--line-height-body);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.statusMessageLoading {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-white));
+  color: var(--color-primary);
+}
+
+.statusMessageSuccess {
+  animation: statusFadeIn 180ms ease;
+  background: color-mix(in srgb, var(--color-primary-hover) 20%, var(--color-white));
+  color: var(--color-dark-grey);
 }
 
 .errorPanel {
+  animation: statusFadeIn 180ms ease;
   background: color-mix(in srgb, var(--color-red) 8%, var(--color-white));
   border: 1px solid color-mix(in srgb, var(--color-red) 30%, transparent);
   border-radius: var(--radius-8);
@@ -56,6 +69,11 @@
 .retryButton:hover,
 .retryButton:focus-visible {
   background: var(--color-red-hover);
+}
+
+.retryButton:disabled {
+  background: color-mix(in srgb, var(--color-red) 50%, var(--color-medium-grey));
+  cursor: not-allowed;
 }
 
 .linksRow {
@@ -100,4 +118,16 @@
   font-size: var(--text-body-m-size);
   font-weight: 700;
   line-height: var(--line-height-compact);
+}
+
+@keyframes statusFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

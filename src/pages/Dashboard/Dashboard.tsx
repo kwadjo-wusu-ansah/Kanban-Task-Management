@@ -21,26 +21,38 @@ function Dashboard() {
   const apiHydrationStatus = useAppSelector(selectApiHydrationStatus)
   const hasHydrationError = apiHydrationStatus === 'failed'
   const isLoadingBoards = apiHydrationStatus === 'loading'
+  const hasSuccessfulHydration = apiHydrationStatus === 'succeeded'
+  const shouldRenderStatusMessage = isLoadingBoards || hasSuccessfulHydration
+  const statusMessage = isLoadingBoards
+    ? 'Loading latest boards. This may take a few seconds on slower connections.'
+    : 'Boards synced successfully.'
 
   // Retries fetching board data after an API hydration failure.
   function handleRetryBoardsLoad() {
+    if (isLoadingBoards) {
+      return
+    }
+
     requestHydration()
   }
 
   return (
     <MainShell title="Dashboard">
       <p className={styles.intro}>Select a board to open its tasks and columns.</p>
-      {isLoadingBoards ? (
-        <p aria-live="polite" className={styles.statusMessage}>
-          Loading latest boards...
+      {shouldRenderStatusMessage ? (
+        <p
+          aria-live="polite"
+          className={`${styles.statusMessage} ${isLoadingBoards ? styles.statusMessageLoading : styles.statusMessageSuccess}`}
+        >
+          {statusMessage}
         </p>
       ) : null}
       {hasHydrationError ? (
         <section aria-live="assertive" className={styles.errorPanel} role="alert">
           <p className={styles.errorTitle}>We couldn&apos;t load the latest board data.</p>
           <p className={styles.errorDescription}>{apiHydrationError ?? 'Please check your connection and try again.'}</p>
-          <button className={styles.retryButton} onClick={handleRetryBoardsLoad} type="button">
-            Retry loading boards
+          <button aria-busy={isLoadingBoards} className={styles.retryButton} onClick={handleRetryBoardsLoad} type="button">
+            {isLoadingBoards ? 'Retrying...' : 'Retry loading boards'}
           </button>
         </section>
       ) : null}

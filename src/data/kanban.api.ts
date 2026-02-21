@@ -1,6 +1,7 @@
 import type { DatasetBoard, DatasetColumn, DatasetTask, KanbanDataset } from './kanban.types'
 
 const DEFAULT_KANBAN_API_PATH = 'api/kanban.json'
+const MAX_SIMULATED_DELAY_MS = 15000
 
 // Validates that a subtask payload contains the required string/boolean fields.
 function isDatasetSubtask(value: unknown): value is { title: string; isCompleted: boolean } {
@@ -71,8 +72,38 @@ function getKanbanApiUrl(): string {
   return `${baseUrl}${DEFAULT_KANBAN_API_PATH}`
 }
 
+// Resolves optional simulated API delay from env for slow-network UX testing.
+function getApiDelayMs(): number {
+  const rawDelayMs = import.meta.env.VITE_KANBAN_API_DELAY_MS
+
+  if (typeof rawDelayMs !== 'string' || rawDelayMs.trim().length === 0) {
+    return 0
+  }
+
+  const parsedDelayMs = Number.parseInt(rawDelayMs, 10)
+
+  if (Number.isNaN(parsedDelayMs) || parsedDelayMs <= 0) {
+    return 0
+  }
+
+  return Math.min(parsedDelayMs, MAX_SIMULATED_DELAY_MS)
+}
+
+// Waits for a bounded duration to support deterministic slow-network simulation.
+function waitForDuration(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, durationMs)
+  })
+}
+
 // Fetches the Kanban dataset from API and validates payload shape before use.
 export async function fetchKanbanDataset(): Promise<KanbanDataset> {
+  const delayMs = getApiDelayMs()
+
+  if (delayMs > 0) {
+    await waitForDuration(delayMs)
+  }
+
   const response = await fetch(getKanbanApiUrl())
 
   if (!response.ok) {
