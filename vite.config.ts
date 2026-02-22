@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import type { Connect, Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const APP_BASE_PATH = '/Kanbon-Task-Management/'
 const MOCK_API_PATH = '/api/kanban'
 const MAX_MOCK_DELAY_MS = 15000
 const MOCK_DATA_FILE_PATH = resolve(process.cwd(), 'data.json')
@@ -32,8 +33,32 @@ function readMockKanbanPayload(): string {
   return readFileSync(MOCK_DATA_FILE_PATH, 'utf-8')
 }
 
+// Normalizes Vite base paths so endpoint matching can support base-prefixed requests.
+function normalizeBasePath(basePath: string): string {
+  if (!basePath.startsWith('/')) {
+    return `/${basePath.replace(/\/+$/, '')}`
+  }
+
+  return basePath.replace(/\/+$/, '')
+}
+
+// Checks whether a pathname targets the mock endpoint with or without the configured base path.
+function isMockApiPath(pathname: string, basePath: string): boolean {
+  if (pathname === MOCK_API_PATH) {
+    return true
+  }
+
+  const normalizedBasePath = normalizeBasePath(basePath)
+
+  if (normalizedBasePath === '/') {
+    return false
+  }
+
+  return pathname === `${normalizedBasePath}${MOCK_API_PATH}`
+}
+
 // Creates mock API middleware for local Kanban data requests.
-function createKanbanMockApiMiddleware(): Connect.NextHandleFunction {
+function createKanbanMockApiMiddleware(basePath: string): Connect.NextHandleFunction {
   return (request, response, next) => {
     if (request.method !== 'GET' || !request.url) {
       next()
@@ -42,7 +67,7 @@ function createKanbanMockApiMiddleware(): Connect.NextHandleFunction {
 
     const requestUrl = new URL(request.url, 'http://localhost')
 
-    if (requestUrl.pathname !== MOCK_API_PATH) {
+    if (!isMockApiPath(requestUrl.pathname, basePath)) {
       next()
       return
     }
@@ -83,8 +108,8 @@ function createKanbanMockApiMiddleware(): Connect.NextHandleFunction {
 }
 
 // Registers the Kanban mock API for both dev and preview servers.
-function createKanbanMockApiPlugin(): Plugin {
-  const mockApiMiddleware = createKanbanMockApiMiddleware()
+function createKanbanMockApiPlugin(basePath: string): Plugin {
+  const mockApiMiddleware = createKanbanMockApiMiddleware(basePath)
 
   return {
     configurePreviewServer(server) {
@@ -99,6 +124,12 @@ function createKanbanMockApiPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/Kanbon-Task-Management/",
-  plugins: [react(), createKanbanMockApiPlugin()],
+  base: APP_BASE_PATH,
+  plugins: [react(), createKanbanMockApiPlugin(APP_BASE_PATH)],
+  test: {
+    css: true,
+    environment: 'jsdom',
+    passWithNoTests: true,
+    setupFiles: ['./src/test/setup.ts'],
+  },
 })
