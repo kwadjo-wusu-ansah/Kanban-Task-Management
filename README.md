@@ -47,6 +47,8 @@ src/
 ├── pages/
 │   ├── BoardView/BoardView.interactions.test.tsx
 │   └── Dashboard/Dashboard.test.tsx
+├── store/
+│   └── slices/kanban.slice.test.ts
 └── test/
     ├── setup.ts
     └── renderWithKanbanStore.tsx

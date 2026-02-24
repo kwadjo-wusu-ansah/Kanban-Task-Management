@@ -1,6 +1,5 @@
 import { Link } from 'react-router'
 import { useHydrateKanbanData } from '../../hooks'
-import { MainShell } from '../MainShell'
 import { useAppSelector } from '../../store/hooks'
 import { selectApiHydrationError, selectApiHydrationStatus, selectBoardPreviews } from '../../store/selectors'
 import styles from './Dashboard.module.css'
@@ -37,7 +36,7 @@ function Dashboard() {
   }
 
   return (
-    <MainShell title="Dashboard">
+    <>
       <p className={styles.intro}>Select a board to open its tasks and columns.</p>
       {shouldRenderStatusMessage ? (
         <p
@@ -79,7 +78,7 @@ function Dashboard() {
           </li>
         ))}
       </ul>
-    </MainShell>
+    </>
   )
 }
 

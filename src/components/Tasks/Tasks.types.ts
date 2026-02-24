@@ -7,3 +7,9 @@ export interface TasksProps extends HTMLAttributes<HTMLElement> {
   mode?: TaskCardMode
   onTaskSelect?: (taskId: string) => void
 }
+
+export interface SortableTaskRowProps {
+  mode: TaskCardMode
+  onTaskSelect?: (taskId: string) => void
+  taskId: string
+}

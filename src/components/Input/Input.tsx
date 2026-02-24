@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { iconCheck, iconChevronDown } from '../../assets'
+import { useDropdownMenuPlacement } from '../../hooks'
 import { classNames } from '../../utils'
 import styles from './Input.module.css'
 import type { CheckboxInputProps, DropdownInputProps, InputProps, TextFieldInputProps } from './Input.types'
@@ -12,19 +13,6 @@ import {
   resolveCheckboxCheckedValue,
   resolveDropdownDisplayValue,
 } from './Input.utils'
-
-// Chooses dropdown menu placement from available viewport space around the trigger.
-function getDropdownMenuPlacement(triggerRect: DOMRect, optionCount: number): 'bottom' | 'top' {
-  const estimatedMenuHeight = optionCount * 31 + 32
-  const availableSpaceBelow = window.innerHeight - triggerRect.bottom
-  const availableSpaceAbove = triggerRect.top
-
-  if (availableSpaceBelow < estimatedMenuHeight && availableSpaceAbove > availableSpaceBelow) {
-    return 'top'
-  }
-
-  return 'bottom'
-}
 
 // Renders checkbox input rows with mode-aware idle, hover, and active visuals.
 function renderCheckboxInput({
@@ -149,18 +137,13 @@ function DropdownInputView({
 // Renders a unified input primitive for checkbox, text field, and dropdown controls.
 function Input(props: InputProps) {
   const [uncontrolledCheckboxChecked, setUncontrolledCheckboxChecked] = useState(false)
-  const [dropdownPlacement, setDropdownPlacement] = useState<'bottom' | 'top'>('bottom')
   const dropdownTriggerRef = useRef<HTMLDivElement | null>(null)
-
-  // Resolves dropdown opening direction so the list stays visible near viewport edges.
-  useEffect(() => {
-    if (props.variant !== 'dropdown' || !props.isMenuOpen || !dropdownTriggerRef.current) {
-      return
-    }
-
-    const triggerRect = dropdownTriggerRef.current.getBoundingClientRect()
-    setDropdownPlacement(getDropdownMenuPlacement(triggerRect, props.options.length))
-  }, [props])
+  const dropdownPlacement = useDropdownMenuPlacement({
+    variant: props.variant,
+    isMenuOpen: props.variant === 'dropdown' ? Boolean(props.isMenuOpen) : false,
+    optionCount: props.variant === 'dropdown' ? props.options.length : 0,
+    triggerRef: dropdownTriggerRef,
+  })
 
   if (props.variant === 'checkbox') {
     const isControlled = typeof props.checked === 'boolean'

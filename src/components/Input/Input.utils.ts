@@ -8,6 +8,19 @@ import type {
 
 type InputStyles = Record<string, string>
 
+// Chooses dropdown menu placement from available viewport space around the trigger.
+export function getDropdownMenuPlacement(triggerRect: DOMRect, optionCount: number): 'bottom' | 'top' {
+  const estimatedMenuHeight = optionCount * 31 + 32
+  const availableSpaceBelow = window.innerHeight - triggerRect.bottom
+  const availableSpaceAbove = triggerRect.top
+
+  if (availableSpaceBelow < estimatedMenuHeight && availableSpaceAbove > availableSpaceBelow) {
+    return 'top'
+  }
+
+  return 'bottom'
+}
+
 // Resolves the mode class used to theme input surfaces.
 export function getModeClassName(mode: InputMode, inputStyles: InputStyles): string {
   return mode === 'light' ? inputStyles.lightMode : inputStyles.darkMode
