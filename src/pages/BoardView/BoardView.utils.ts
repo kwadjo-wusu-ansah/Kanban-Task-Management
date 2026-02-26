@@ -117,3 +117,66 @@ export function buildDeleteBoardDescription(boardName: string): string {
 export function buildDeleteTaskDescription(taskName: string): string {
   return `Are you sure you want to delete the '${taskName}' task and its subtasks? This action cannot be reversed.`
 }
+
+interface BuildBoardViewDerivedStateParams {
+  boardId: string | undefined
+  boardPreviews: BoardPreview[]
+  deletingBoardName: string
+  deletingTaskName: string
+  isMobileViewport: boolean
+  isSidebarHidden: boolean
+  sidebarBoards: Array<{ id: string }>
+  taskId: string | undefined
+}
+
+interface BoardViewDerivedState {
+  activeBoard: BoardPreview | undefined
+  activeBoardId: string
+  activeBoardName: string
+  activeTask: BoardTaskPreview | undefined
+  boardCount: number
+  deleteBoardDescription: string
+  deleteTaskDescription: string
+  hasColumns: boolean
+  isHeaderSidebarVisible: boolean
+  shouldRenderSidebar: boolean
+  statusOptions: DropdownOption[]
+}
+
+// Builds core BoardView derived values from route params, board data, and responsive UI state.
+export function buildBoardViewDerivedState({
+  boardId,
+  boardPreviews,
+  deletingBoardName,
+  deletingTaskName,
+  isMobileViewport,
+  isSidebarHidden,
+  sidebarBoards,
+  taskId,
+}: BuildBoardViewDerivedStateParams): BoardViewDerivedState {
+  const activeBoardId = boardId ?? sidebarBoards[0]?.id ?? ''
+  const activeBoard = getActiveBoard(boardPreviews, activeBoardId)
+  const activeTask = getActiveTask(activeBoard, taskId ?? null)
+  const activeBoardName = activeBoard?.name ?? FALLBACK_BOARD_NAME
+  const hasColumns = (activeBoard?.columns.length ?? 0) > 0
+  const boardCount = sidebarBoards.length
+  const statusOptions = buildStatusOptions(activeBoard)
+  const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
+  const deleteTaskDescription = buildDeleteTaskDescription(deletingTaskName || activeTask?.title || '')
+  const shouldRenderSidebar = !isMobileViewport
+  const isHeaderSidebarVisible = shouldRenderSidebar && !isSidebarHidden
+
+  return {
+    activeBoard,
+    activeBoardId,
+    activeBoardName,
+    activeTask,
+    boardCount,
+    deleteBoardDescription,
+    deleteTaskDescription,
+    hasColumns,
+    isHeaderSidebarVisible,
+    shouldRenderSidebar,
+    statusOptions,
+  }
+}

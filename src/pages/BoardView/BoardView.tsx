@@ -1,18 +1,22 @@
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
-import type { ModalItem, SidebarMode } from '../../components'
-import { useBoardViewActions, useBoardViewOverlayState } from '../../hooks'
+import type { SidebarMode } from '../../components'
+import {
+  useBoardViewActions,
+  useBoardViewFormState,
+  useBoardViewMobileViewport,
+  useBoardViewOverlayState,
+  useBoardViewRouteState,
+} from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
 import { classNames } from '../../utils'
 import {
   COLUMN_ACCENT_COLORS,
-  FALLBACK_BOARD_NAME,
   MOBILE_BREAKPOINT,
-  buildDeleteBoardDescription,
-  buildDeleteTaskDescription,
+  buildBoardViewDerivedState,
   buildStatusOptions,
   createClientId,
   createEmptyBoardColumnItem,
@@ -37,8 +41,6 @@ function BoardView() {
   const navigate = useNavigate()
   const [mode, setMode] = useState<SidebarMode>('light')
   const [isSidebarHidden, setIsSidebarHidden] = useState(false)
-  const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
-  const activeBoardId = boardId ?? boards[0]?.id ?? ''
 
   const {
     isTaskMenuOpen,
@@ -74,50 +76,108 @@ function BoardView() {
     closeAllOverlays,
   } = useBoardViewOverlayState()
 
-  const [viewStatusValue, setViewStatusValue] = useState('')
-  const [viewSubtasks, setViewSubtasks] = useState<ModalItem[]>([])
+  const { isMobileViewport } = useBoardViewMobileViewport({
+    mobileBreakpoint: MOBILE_BREAKPOINT,
+    setIsMobileBoardsMenuOpen,
+  })
 
-  const [addTaskTitle, setAddTaskTitle] = useState('')
-  const [addTaskDescription, setAddTaskDescription] = useState('')
-  const [addTaskStatusValue, setAddTaskStatusValue] = useState('')
-  const [addTaskSubtasks, setAddTaskSubtasks] = useState<ModalItem[]>(createInitialAddTaskSubtasks)
-  const [addTaskSubtasksError, setAddTaskSubtasksError] = useState('')
+  const {
+    addBoardColumns,
+    addBoardName,
+    addBoardNameError,
+    addColumnName,
+    addColumnNameError,
+    addTaskDescription,
+    addTaskStatusValue,
+    addTaskSubtasks,
+    addTaskSubtasksError,
+    addTaskTitle,
+    deletingBoardId,
+    deletingBoardName,
+    deletingTaskBoardId,
+    deletingTaskId,
+    deletingTaskName,
+    editBoardColumns,
+    editBoardColumnsError,
+    editBoardName,
+    editBoardNameError,
+    editingBoardId,
+    editingTaskId,
+    editTaskDescription,
+    editTaskStatusValue,
+    editTaskSubtasks,
+    editTaskTitle,
+    setAddBoardColumns,
+    setAddBoardName,
+    setAddBoardNameError,
+    setAddColumnName,
+    setAddColumnNameError,
+    setAddTaskDescription,
+    setAddTaskStatusValue,
+    setAddTaskSubtasks,
+    setAddTaskSubtasksError,
+    setAddTaskTitle,
+    setDeletingBoardId,
+    setDeletingBoardName,
+    setDeletingTaskBoardId,
+    setDeletingTaskId,
+    setDeletingTaskName,
+    setEditBoardColumns,
+    setEditBoardColumnsError,
+    setEditBoardName,
+    setEditBoardNameError,
+    setEditingBoardId,
+    setEditingTaskId,
+    setEditTaskDescription,
+    setEditTaskStatusValue,
+    setEditTaskSubtasks,
+    setEditTaskTitle,
+    setViewStatusValue,
+    setViewSubtasks,
+    viewStatusValue,
+    viewSubtasks,
+  } = useBoardViewFormState({
+    createInitialAddBoardColumns,
+    createInitialAddTaskSubtasks,
+  })
 
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-  const [editTaskTitle, setEditTaskTitle] = useState('')
-  const [editTaskDescription, setEditTaskDescription] = useState('')
-  const [editTaskStatusValue, setEditTaskStatusValue] = useState('')
-  const [editTaskSubtasks, setEditTaskSubtasks] = useState<ModalItem[]>([])
+  const {
+    activeBoard,
+    activeBoardId,
+    activeBoardName,
+    activeTask,
+    boardCount,
+    deleteBoardDescription,
+    deleteTaskDescription,
+    hasColumns,
+    isHeaderSidebarVisible,
+    shouldRenderSidebar,
+    statusOptions,
+  } = buildBoardViewDerivedState({
+    boardId,
+    boardPreviews,
+    deletingBoardName,
+    deletingTaskName,
+    isMobileViewport,
+    isSidebarHidden,
+    sidebarBoards: boards,
+    taskId,
+  })
 
-  const [addBoardName, setAddBoardName] = useState('')
-  const [addBoardNameError, setAddBoardNameError] = useState('')
-  const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
-  const [addColumnName, setAddColumnName] = useState('')
-  const [addColumnNameError, setAddColumnNameError] = useState('')
+  const { navigateToBoardRoute } = useBoardViewRouteState({
+    activeBoard,
+    activeBoardId,
+    boardId,
+    boardPreviews,
+    closeTaskMenus,
+    getActiveTask,
+    mapTaskSubtasksToViewModalItems,
+    navigate,
+    setViewStatusValue,
+    setViewSubtasks,
+    taskId,
+  })
 
-  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
-  const [editBoardName, setEditBoardName] = useState('')
-  const [editBoardNameError, setEditBoardNameError] = useState('')
-  const [editBoardColumns, setEditBoardColumns] = useState<ModalItem[]>([])
-  const [editBoardColumnsError, setEditBoardColumnsError] = useState('')
-
-  const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null)
-  const [deletingBoardName, setDeletingBoardName] = useState('')
-
-  const [deletingTaskBoardId, setDeletingTaskBoardId] = useState<string | null>(null)
-  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
-  const [deletingTaskName, setDeletingTaskName] = useState('')
-
-  const activeBoard = getActiveBoard(boardPreviews, activeBoardId)
-  const activeTask = getActiveTask(activeBoard, taskId ?? null)
-  const activeBoardName = activeBoard?.name ?? FALLBACK_BOARD_NAME
-  const hasColumns = (activeBoard?.columns.length ?? 0) > 0
-  const boardCount = boards.length
-  const statusOptions = buildStatusOptions(activeBoard)
-  const deleteBoardDescription = buildDeleteBoardDescription(deletingBoardName || activeBoardName)
-  const deleteTaskDescription = buildDeleteTaskDescription(deletingTaskName || activeTask?.title || '')
-  const shouldRenderSidebar = !isMobileViewport
-  const isHeaderSidebarVisible = shouldRenderSidebar && !isSidebarHidden
   const dragSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -125,89 +185,6 @@ function BoardView() {
       },
     }),
   )
-
-  // Keeps component board state aligned with URL params and redirects invalid board IDs.
-  useEffect(() => {
-    if (!boardId) {
-      if (boardPreviews[0]) {
-        navigate(`/board/${boardPreviews[0].id}`, { replace: true })
-      }
-      return
-    }
-
-    const hasMatchingBoard = boardPreviews.some((board) => board.id === boardId)
-
-    if (!hasMatchingBoard) {
-      if (boardPreviews[0]) {
-        navigate(`/board/${boardPreviews[0].id}`, { replace: true })
-      } else {
-        navigate('/', { replace: true })
-      }
-      return
-    }
-
-  }, [boardId, boardPreviews, navigate])
-
-  // Syncs task modal state with nested task route params and redirects unknown tasks.
-  useEffect(() => {
-    if (!taskId) {
-      closeTaskMenus()
-      return
-    }
-
-    if (!activeBoard) {
-      return
-    }
-
-    const nextTask = getActiveTask(activeBoard, taskId)
-
-    if (!nextTask) {
-      navigate(`/board/${activeBoardId}`, { replace: true })
-      return
-    }
-
-    setViewStatusValue(nextTask.status)
-    setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
-    closeTaskMenus()
-  }, [activeBoard, activeBoardId, closeTaskMenus, navigate, taskId])
-
-  // Tracks the mobile breakpoint so the app can switch between desktop sidebar and mobile header layouts.
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-
-    function handleMobileBreakpointChange(event: MediaQueryListEvent) {
-      setIsMobileViewport(event.matches)
-    }
-
-    setIsMobileViewport(mediaQuery.matches)
-    mediaQuery.addEventListener('change', handleMobileBreakpointChange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleMobileBreakpointChange)
-    }
-  }, [])
-
-  // Closes the mobile boards popover when switching to tablet/desktop layouts.
-  useEffect(() => {
-    if (!isMobileViewport) {
-      setIsMobileBoardsMenuOpen(false)
-    }
-  }, [isMobileViewport, setIsMobileBoardsMenuOpen])
-
-  // Navigates to the current board route while clearing any nested task segment.
-  function navigateToBoardRoute(replace = false) {
-    if (!activeBoardId) {
-      navigate('/', { replace })
-      return
-    }
-
-    if (replace) {
-      navigate(`/board/${activeBoardId}`, { replace: true })
-      return
-    }
-
-    navigate(`/board/${activeBoardId}`)
-  }
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
