@@ -1,26 +1,13 @@
-import type { DragEndEvent } from '@dnd-kit/core'
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import type { BoardPreview, BoardTaskPreview } from '../../data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
 import type { DropdownOption, ModalItem, SidebarMode } from '../../components'
+import { useBoardViewActions, useBoardViewOverlayState } from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
-import {
-  boardColumnsReordered,
-  boardCreated,
-  boardRemoved,
-  boardUpdated,
-  columnCreated,
-  columnRemoved,
-  columnUpdated,
-  taskAdded,
-  taskDeleted,
-  taskMoved,
-  taskUpdated,
-} from '../../store/slices'
-import { classNames, fromColumnDragId, fromTaskDragId } from '../../utils'
+import { classNames } from '../../utils'
 import styles from '../../App.module.css'
 
 const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
@@ -89,15 +76,6 @@ function getActiveTask(board: BoardPreview | undefined, taskId: string | null): 
   return board.columns.flatMap((column) => column.tasks).find((task) => task.id === taskId)
 }
 
-// Resolves the board column that currently owns the provided task ID.
-function getTaskColumn(board: BoardPreview | undefined, taskId: string): BoardPreview['columns'][number] | undefined {
-  if (!board) {
-    return undefined
-  }
-
-  return board.columns.find((column) => column.tasks.some((task) => task.id === taskId))
-}
-
 // Builds status dropdown options from the active board column names.
 function buildStatusOptions(board: BoardPreview | undefined): DropdownOption[] {
   if (!board || board.columns.length === 0) {
@@ -161,50 +139,70 @@ function BoardView() {
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
   const activeBoardId = boardId ?? boards[0]?.id ?? ''
 
-  const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
-  const [isViewStatusMenuOpen, setIsViewStatusMenuOpen] = useState(false)
+  const {
+    isTaskMenuOpen,
+    isViewStatusMenuOpen,
+    isAddTaskModalOpen,
+    isAddStatusMenuOpen,
+    isEditTaskModalOpen,
+    isEditStatusMenuOpen,
+    isAddBoardModalOpen,
+    isAddColumnModalOpen,
+    isBoardMenuOpen,
+    isMobileBoardsMenuOpen,
+    isEditBoardModalOpen,
+    isDeleteBoardModalOpen,
+    isDeleteTaskModalOpen,
+    setIsTaskMenuOpen,
+    setIsViewStatusMenuOpen,
+    setIsAddTaskModalOpen,
+    setIsAddStatusMenuOpen,
+    setIsEditTaskModalOpen,
+    setIsEditStatusMenuOpen,
+    setIsAddBoardModalOpen,
+    setIsAddColumnModalOpen,
+    setIsBoardMenuOpen,
+    setIsMobileBoardsMenuOpen,
+    setIsEditBoardModalOpen,
+    setIsDeleteBoardModalOpen,
+    setIsDeleteTaskModalOpen,
+    closeHeaderMenus,
+    closeTaskMenus,
+    closeTaskModals,
+    closeBoardModals,
+    closeAllOverlays,
+  } = useBoardViewOverlayState()
+
   const [viewStatusValue, setViewStatusValue] = useState('')
   const [viewSubtasks, setViewSubtasks] = useState<ModalItem[]>([])
 
-  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false)
-  const [isAddStatusMenuOpen, setIsAddStatusMenuOpen] = useState(false)
   const [addTaskTitle, setAddTaskTitle] = useState('')
   const [addTaskDescription, setAddTaskDescription] = useState('')
   const [addTaskStatusValue, setAddTaskStatusValue] = useState('')
   const [addTaskSubtasks, setAddTaskSubtasks] = useState<ModalItem[]>(createInitialAddTaskSubtasks)
   const [addTaskSubtasksError, setAddTaskSubtasksError] = useState('')
 
-  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-  const [isEditStatusMenuOpen, setIsEditStatusMenuOpen] = useState(false)
   const [editTaskTitle, setEditTaskTitle] = useState('')
   const [editTaskDescription, setEditTaskDescription] = useState('')
   const [editTaskStatusValue, setEditTaskStatusValue] = useState('')
   const [editTaskSubtasks, setEditTaskSubtasks] = useState<ModalItem[]>([])
 
-  const [isAddBoardModalOpen, setIsAddBoardModalOpen] = useState(false)
   const [addBoardName, setAddBoardName] = useState('')
   const [addBoardNameError, setAddBoardNameError] = useState('')
   const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
-  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
   const [addColumnName, setAddColumnName] = useState('')
   const [addColumnNameError, setAddColumnNameError] = useState('')
 
-  const [isBoardMenuOpen, setIsBoardMenuOpen] = useState(false)
-  const [isMobileBoardsMenuOpen, setIsMobileBoardsMenuOpen] = useState(false)
-
-  const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false)
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
   const [editBoardName, setEditBoardName] = useState('')
   const [editBoardNameError, setEditBoardNameError] = useState('')
   const [editBoardColumns, setEditBoardColumns] = useState<ModalItem[]>([])
   const [editBoardColumnsError, setEditBoardColumnsError] = useState('')
 
-  const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false)
   const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null)
   const [deletingBoardName, setDeletingBoardName] = useState('')
 
-  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false)
   const [deletingTaskBoardId, setDeletingTaskBoardId] = useState<string | null>(null)
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
   const [deletingTaskName, setDeletingTaskName] = useState('')
@@ -252,8 +250,7 @@ function BoardView() {
   // Syncs task modal state with nested task route params and redirects unknown tasks.
   useEffect(() => {
     if (!taskId) {
-      setIsTaskMenuOpen(false)
-      setIsViewStatusMenuOpen(false)
+      closeTaskMenus()
       return
     }
 
@@ -270,9 +267,8 @@ function BoardView() {
 
     setViewStatusValue(nextTask.status)
     setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-  }, [activeBoard, activeBoardId, navigate, taskId])
+    closeTaskMenus()
+  }, [activeBoard, activeBoardId, closeTaskMenus, navigate, taskId])
 
   // Tracks the mobile breakpoint so the app can switch between desktop sidebar and mobile header layouts.
   useEffect(() => {
@@ -295,13 +291,7 @@ function BoardView() {
     if (!isMobileViewport) {
       setIsMobileBoardsMenuOpen(false)
     }
-  }, [isMobileViewport])
-
-  // Closes both header menus so only one top-level menu is visible at a time.
-  function closeHeaderMenus() {
-    setIsBoardMenuOpen(false)
-    setIsMobileBoardsMenuOpen(false)
-  }
+  }, [isMobileViewport, setIsMobileBoardsMenuOpen])
 
   // Navigates to the current board route while clearing any nested task segment.
   function navigateToBoardRoute(replace = false) {
@@ -365,233 +355,128 @@ function BoardView() {
     setDeletingTaskName('')
   }
 
-  // Handles sidebar board changes and closes all open task modals and menus.
-  function handleBoardSelect(nextBoardId: string) {
-    const nextBoard = getActiveBoard(boardPreviews, nextBoardId)
-    const nextStatusOptions = buildStatusOptions(nextBoard)
-
-    navigate(`/board/${nextBoardId}`)
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    setAddTaskStatusValue(nextStatusOptions[0]?.value ?? '')
-
-    setIsEditTaskModalOpen(false)
+  // Clears overlay visibility and paired transient UI fields before opening a new flow.
+  function resetOverlayDrivenUiState() {
+    closeAllOverlays()
     setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
     resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-  }
-
-  // Handles task drag completion and dispatches cross-column or in-column task moves.
-  function handleTaskDragEnd(event: DragEndEvent) {
-    if (!activeBoard || !event.over) {
-      return
-    }
-
-    const activeTaskId = fromTaskDragId(String(event.active.id))
-
-    if (!activeTaskId) {
-      return
-    }
-
-    const sourceColumn = getTaskColumn(activeBoard, activeTaskId)
-
-    if (!sourceColumn) {
-      return
-    }
-
-    const overDragId = String(event.over.id)
-    const overTaskId = fromTaskDragId(overDragId)
-    const overColumnId = fromColumnDragId(overDragId)
-    let destinationColumnId: string | undefined
-    let destinationIndex = -1
-
-    if (overTaskId) {
-      const destinationColumn = getTaskColumn(activeBoard, overTaskId)
-
-      if (!destinationColumn) {
-        return
-      }
-
-      destinationColumnId = destinationColumn.id
-      destinationIndex = destinationColumn.tasks.findIndex((task) => task.id === overTaskId)
-    } else if (overColumnId) {
-      const destinationColumn = activeBoard.columns.find((column) => column.id === overColumnId)
-
-      if (!destinationColumn) {
-        return
-      }
-
-      destinationColumnId = destinationColumn.id
-      destinationIndex = destinationColumn.tasks.length
-    }
-
-    if (!destinationColumnId || destinationIndex < 0) {
-      return
-    }
-
-    const sourceTaskIndex = sourceColumn.tasks.findIndex((task) => task.id === activeTaskId)
-
-    if (sourceTaskIndex < 0) {
-      return
-    }
-
-    if (sourceColumn.id === destinationColumnId && sourceTaskIndex === destinationIndex) {
-      return
-    }
-
-    dispatch(
-      taskMoved({
-        destinationColumnId,
-        index: destinationIndex,
-        taskId: activeTaskId,
-      }),
-    )
-  }
-
-  // Opens the view-task modal using the clicked task and local interactive state.
-  function handleTaskSelect(taskId: string) {
-    const nextTask = getActiveTask(activeBoard, taskId)
-
-    if (!nextTask) {
-      return
-    }
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    navigate(`/board/${activeBoardId}/task/${nextTask.id}`)
-    setIsTaskMenuOpen(false)
-    setViewStatusValue(nextTask.status)
-    setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
-    setIsViewStatusMenuOpen(false)
-  }
-
-  // Opens Add Task modal with a clean form and closes other task overlays.
-  function handleAddTaskOpen() {
-    if (!hasColumns) {
-      return
-    }
-
-    navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    setIsAddTaskModalOpen(true)
-    resetAddTaskForm(statusOptions[0]?.value ?? '')
-  }
-
-  // Opens Add Board modal with a clean form and closes other task overlays.
-  function handleAddBoardOpen() {
-    navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    setIsAddBoardModalOpen(true)
-    resetAddBoardForm()
-  }
-
-  // Opens Add Column modal with a clean form and closes other overlays.
-  function handleAddColumnOpen() {
-    if (!activeBoard) {
-      return
-    }
-
-    navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    closeHeaderMenus()
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsEditBoardModalOpen(false)
     resetEditBoardForm()
     resetDeleteBoardState()
     resetDeleteTaskState()
-    setIsAddColumnModalOpen(true)
-    resetAddColumnForm()
   }
+
+  const {
+    handleBoardSelect,
+    handleTaskDragEnd,
+    handleTaskSelect,
+    handleAddTaskOpen,
+    handleAddBoardOpen,
+    handleAddColumnOpen,
+    handleBoardDeleteAction,
+    handleEditBoardOpen,
+    handleDeleteBoardConfirm,
+    handleViewTaskSubtaskToggle,
+    handleViewTaskStatusSelect,
+    handleEditTaskOpen,
+    handleTaskDeleteAction,
+    handleDeleteTaskConfirm,
+    handleCreateTask,
+    handleCreateColumn,
+    handleCreateBoard,
+    handleSaveBoardChanges,
+    handleSaveTaskChanges,
+  } = useBoardViewActions({
+    activeBoard,
+    activeBoardId,
+    activeTask,
+    addBoardColumns,
+    addBoardName,
+    addColumnName,
+    addTaskDescription,
+    addTaskStatusValue,
+    addTaskSubtasks,
+    addTaskTitle,
+    boardPreviews,
+    buildStatusOptions,
+    closeBoardModals,
+    closeHeaderMenus,
+    closeTaskMenus,
+    closeTaskModals,
+    columnAccentColors: COLUMN_ACCENT_COLORS,
+    createClientId,
+    createEmptySubtaskItem,
+    deletingBoardId,
+    deletingTaskBoardId,
+    deletingTaskId,
+    dispatch,
+    editBoardColumns,
+    editBoardName,
+    editTaskDescription,
+    editTaskStatusValue,
+    editTaskSubtasks,
+    editTaskTitle,
+    editingBoardId,
+    editingTaskId,
+    getActiveBoard,
+    getActiveTask,
+    hasColumns,
+    hasDuplicateBoardName,
+    mapBoardColumnsToEditableItems,
+    mapTaskSubtasksToEditableItems,
+    mapTaskSubtasksToViewModalItems,
+    navigate,
+    navigateToBoardRoute,
+    resetAddBoardForm,
+    resetAddColumnForm,
+    resetAddTaskForm,
+    resetDeleteTaskState,
+    resetEditBoardForm,
+    resetOverlayDrivenUiState,
+    setAddBoardNameError,
+    setAddColumnNameError,
+    setAddTaskStatusValue,
+    setAddTaskSubtasks,
+    setAddTaskSubtasksError,
+    setDeletingBoardId,
+    setDeletingBoardName,
+    setDeletingTaskBoardId,
+    setDeletingTaskId,
+    setDeletingTaskName,
+    setEditBoardColumns,
+    setEditBoardColumnsError,
+    setEditBoardName,
+    setEditBoardNameError,
+    setEditTaskDescription,
+    setEditingBoardId,
+    setEditingTaskId,
+    setEditTaskStatusValue,
+    setEditTaskSubtasks,
+    setEditTaskTitle,
+    setIsAddBoardModalOpen,
+    setIsAddColumnModalOpen,
+    setIsAddTaskModalOpen,
+    setIsDeleteBoardModalOpen,
+    setIsDeleteTaskModalOpen,
+    setIsEditBoardModalOpen,
+    setIsEditStatusMenuOpen,
+    setIsEditTaskModalOpen,
+    setIsViewStatusMenuOpen,
+    setViewStatusValue,
+    setViewSubtasks,
+    statusOptions,
+    viewSubtasks,
+  })
 
   // Closes the view-task modal and related menu/dropdown state.
   function handleViewTaskModalClose() {
     navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
+    closeTaskMenus()
   }
 
   // Closes the Add Task modal and its status dropdown.
   function handleAddTaskModalClose() {
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
+    closeTaskModals()
   }
 
   // Closes the Add Board modal and clears board-name validation feedback.
@@ -633,135 +518,10 @@ function BoardView() {
     setIsMobileBoardsMenuOpen(false)
   }
 
-  // Opens the Delete Board modal from the header board-action menu.
-  function handleBoardDeleteAction() {
-    if (!activeBoard) {
-      closeHeaderMenus()
-      return
-    }
-
-    closeHeaderMenus()
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-    resetDeleteTaskState()
-    setIsDeleteBoardModalOpen(true)
-    setDeletingBoardId(activeBoard.id)
-    setDeletingBoardName(activeBoard.name)
-  }
-
-  // Opens Edit Board modal from the header board-action menu and pre-fills form fields.
-  function handleEditBoardOpen() {
-    if (!activeBoard) {
-      return
-    }
-
-    navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    closeHeaderMenus()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    setEditingBoardId(activeBoard.id)
-    setEditBoardName(activeBoard.name)
-    setEditBoardNameError('')
-    setEditBoardColumns(mapBoardColumnsToEditableItems(activeBoard))
-    setEditBoardColumnsError('')
-    setIsEditBoardModalOpen(true)
-  }
-
-  // Deletes the selected board in the store and switches to the first remaining board.
-  function handleDeleteBoardConfirm() {
-    if (!deletingBoardId) {
-      return
-    }
-
-    const nextBoardId = boardPreviews.find((board) => board.id !== deletingBoardId)?.id
-    dispatch(boardRemoved({ boardId: deletingBoardId }))
-
-    if (nextBoardId) {
-      navigate(`/board/${nextBoardId}`, { replace: true })
-    } else {
-      navigate('/', { replace: true })
-    }
-
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-    closeHeaderMenus()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-  }
-
   // Closes the Edit Board modal and clears its local form state.
   function handleEditBoardModalClose() {
     setIsEditBoardModalOpen(false)
     resetEditBoardForm()
-  }
-
-  // Toggles a subtask checkbox and persists the updated completion state in the store.
-  function handleViewTaskSubtaskToggle(subtaskId: string) {
-    if (!activeTask) {
-      return
-    }
-
-    const nextSubtasks = viewSubtasks.map((subtask) => (subtask.id === subtaskId ? { ...subtask, checked: !subtask.checked } : subtask))
-
-    setViewSubtasks(nextSubtasks)
-    dispatch(
-      taskUpdated({
-        changes: {
-          subtasks: nextSubtasks.map((subtask) => ({
-            id: subtask.id,
-            isCompleted: Boolean(subtask.checked),
-            title: subtask.value,
-          })),
-        },
-        taskId: activeTask.id,
-      }),
-    )
-  }
-
-  // Selects a new task status and moves the task to the matching column.
-  function handleViewTaskStatusSelect(nextStatusValue: string) {
-    if (!activeBoard || !activeTask) {
-      setIsViewStatusMenuOpen(false)
-      return
-    }
-
-    const targetColumn = activeBoard.columns.find((column) => column.name === nextStatusValue)
-
-    if (targetColumn && nextStatusValue !== activeTask.status) {
-      dispatch(taskMoved({ destinationColumnId: targetColumn.id, taskId: activeTask.id }))
-    }
-
-    setViewStatusValue(nextStatusValue)
-    setIsViewStatusMenuOpen(false)
   }
 
   // Toggles the view-task action menu and collapses the status dropdown.
@@ -770,86 +530,15 @@ function BoardView() {
     setIsTaskMenuOpen((previousMenuState) => !previousMenuState)
   }
 
-  // Opens Edit Task modal from the view-task action menu and pre-fills form fields.
-  function handleEditTaskOpen() {
-    if (!activeTask) {
-      return
-    }
-
-    const editableSubtasks = mapTaskSubtasksToEditableItems(activeTask)
-
-    setEditingTaskId(activeTask.id)
-    setEditTaskTitle(activeTask.title)
-    setEditTaskDescription(activeTask.description)
-    setEditTaskStatusValue(activeTask.status)
-    setEditTaskSubtasks(editableSubtasks.length > 0 ? editableSubtasks : [createEmptySubtaskItem('e.g. Make coffee')])
-    setIsEditStatusMenuOpen(false)
-    setIsEditTaskModalOpen(true)
-
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    navigateToBoardRoute()
-
-    closeHeaderMenus()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-  }
-
-  // Opens the Delete Task modal from the view-task action menu.
-  function handleTaskDeleteAction() {
-    if (!activeTask || !activeBoard) {
-      setIsTaskMenuOpen(false)
-      return
-    }
-
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    navigateToBoardRoute()
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    closeHeaderMenus()
-    resetDeleteBoardState()
-
-    setDeletingTaskBoardId(activeBoard.id)
-    setDeletingTaskId(activeTask.id)
-    setDeletingTaskName(activeTask.title)
-    setIsDeleteTaskModalOpen(true)
-  }
-
   // Closes the Delete Task modal.
   function handleDeleteTaskModalClose() {
     resetDeleteTaskState()
   }
 
-  // Deletes the selected task from the store and closes task-level overlays.
-  function handleDeleteTaskConfirm() {
-    if (!deletingTaskId || !deletingTaskBoardId) {
-      return
-    }
-
-    dispatch(taskDeleted({ taskId: deletingTaskId }))
-
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    navigate(`/board/${deletingTaskBoardId}`, { replace: true })
-    resetDeleteTaskState()
-  }
-
   // Closes the Edit Task modal and edit-status dropdown.
   function handleEditTaskModalClose() {
-    setIsEditTaskModalOpen(false)
+    closeTaskModals()
     setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
   }
 
   // Adds a new blank subtask row to the Add Task form.
@@ -883,62 +572,6 @@ function BoardView() {
     setIsAddStatusMenuOpen(false)
   }
 
-  // Creates a new task in the store at the bottom of the selected status column.
-  function handleCreateTask() {
-    if (!activeBoard) {
-      return
-    }
-
-    const normalizedTitle = addTaskTitle.trim()
-    const normalizedStatus = addTaskStatusValue.trim()
-    const normalizedSubtasks = addTaskSubtasks.map((subtask) => ({
-      id: subtask.id,
-      title: subtask.value.trim(),
-    }))
-    const nextSubtasksWithErrors = addTaskSubtasks.map((subtask) => ({
-      ...subtask,
-      errorMessage: subtask.value.trim().length === 0 ? "Can't be empty" : undefined,
-    }))
-    const hasSubtaskError = nextSubtasksWithErrors.some((subtask) => Boolean(subtask.errorMessage))
-
-    if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || hasSubtaskError || normalizedSubtasks.length === 0) {
-      setAddTaskSubtasks(nextSubtasksWithErrors)
-      if (normalizedSubtasks.length === 0) {
-        setAddTaskSubtasksError('Keep at least one subtask')
-      }
-      return
-    }
-
-    const targetColumn = activeBoard.columns.find((column) => column.name === normalizedStatus) ?? activeBoard.columns[0]
-
-    if (!targetColumn) {
-      return
-    }
-
-    const nextTaskId = createClientId('task')
-    dispatch(
-      taskAdded({
-        boardId: activeBoard.id,
-        columnId: targetColumn.id,
-        task: {
-          description: addTaskDescription.trim(),
-          id: nextTaskId,
-          status: targetColumn.name,
-          subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
-            id: subtask.id || `${nextTaskId}-subtask-${subtaskIndex}`,
-            isCompleted: false,
-            title: subtask.title,
-          })),
-          title: normalizedTitle,
-        },
-      }),
-    )
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    resetAddTaskForm(targetColumn.name)
-  }
-
   // Updates the Add Column name field and clears validation once the value changes.
   function handleAddColumnNameChange(nextName: string) {
     setAddColumnName(nextName)
@@ -946,35 +579,6 @@ function BoardView() {
     if (addColumnNameError) {
       setAddColumnNameError('')
     }
-  }
-
-  // Creates a new column in the store at the end of the active board column list.
-  function handleCreateColumn() {
-    if (!activeBoard) {
-      return
-    }
-
-    const normalizedColumnName = addColumnName.trim()
-
-    if (normalizedColumnName.length === 0) {
-      setAddColumnNameError("Can't be empty")
-      return
-    }
-
-    const nextColumnIndex = activeBoard.columns.length
-    dispatch(
-      columnCreated({
-        boardId: activeBoard.id,
-        column: {
-          accentColor: COLUMN_ACCENT_COLORS[nextColumnIndex % COLUMN_ACCENT_COLORS.length],
-          id: createClientId('column'),
-          name: normalizedColumnName,
-        },
-      }),
-    )
-
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
   }
 
   // Updates the Add Board name field and clears validation once the value changes.
@@ -1001,41 +605,6 @@ function BoardView() {
     setAddBoardColumns((previousColumns) =>
       previousColumns.map((column) => (column.id === columnId ? { ...column, value: nextValue } : column)),
     )
-  }
-
-  // Creates a new board in the store, blocking duplicate board names and allowing empty column rows.
-  function handleCreateBoard() {
-    const normalizedBoardName = addBoardName.trim()
-
-    if (normalizedBoardName.length === 0) {
-      setAddBoardNameError("Can't be empty")
-      return
-    }
-
-    if (hasDuplicateBoardName(boardPreviews, normalizedBoardName)) {
-      setAddBoardNameError('Board name already exists')
-      return
-    }
-
-    const normalizedColumnNames = addBoardColumns
-      .map((column) => column.value.trim())
-      .filter((columnName) => columnName.length > 0)
-
-    const nextBoardId = createClientId('board')
-    dispatch(
-      boardCreated({
-        boardId: nextBoardId,
-        columns: normalizedColumnNames.map((columnName, columnIndex) => ({
-          accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
-          id: `${nextBoardId}-column-${columnIndex}`,
-          name: columnName,
-        })),
-        name: normalizedBoardName,
-      }),
-    )
-    navigate(`/board/${nextBoardId}`)
-    setIsAddBoardModalOpen(false)
-    resetAddBoardForm()
   }
 
   // Updates the Edit Board name field and clears validation once the value changes.
@@ -1076,115 +645,6 @@ function BoardView() {
     }
   }
 
-  // Saves board edits and moves tasks from removed columns into the first remaining column.
-  function handleSaveBoardChanges() {
-    if (!editingBoardId) {
-      return
-    }
-
-    const boardToEdit = boardPreviews.find((board) => board.id === editingBoardId)
-
-    if (!boardToEdit) {
-      return
-    }
-
-    const normalizedBoardName = editBoardName.trim()
-
-    if (normalizedBoardName.length === 0) {
-      setEditBoardNameError("Can't be empty")
-      return
-    }
-
-    if (hasDuplicateBoardName(boardPreviews, normalizedBoardName, editingBoardId)) {
-      setEditBoardNameError('Board name already exists')
-      return
-    }
-
-    const normalizedColumns = editBoardColumns
-      .map((column) => ({
-        id: column.id,
-        name: column.value.trim(),
-      }))
-      .filter((column) => column.name.length > 0)
-
-    const hasTasks = boardToEdit.columns.some((column) => column.tasks.length > 0)
-
-    if (normalizedColumns.length === 0 && hasTasks) {
-      setEditBoardColumnsError('Keep at least one column while this board has tasks')
-      return
-    }
-
-    if (normalizedColumns.length === 0) {
-      boardToEdit.columns.forEach((column) => {
-        dispatch(columnRemoved({ boardId: editingBoardId, columnId: column.id }))
-      })
-      dispatch(boardColumnsReordered({ boardId: editingBoardId, columnIds: [] }))
-      dispatch(boardUpdated({ boardId: editingBoardId, changes: { name: normalizedBoardName } }))
-      setIsEditBoardModalOpen(false)
-      resetEditBoardForm()
-      return
-    }
-
-    const existingColumnIds = new Set(boardToEdit.columns.map((column) => column.id))
-    const nextColumns = normalizedColumns.map((column, columnIndex) => {
-      const isExisting = existingColumnIds.has(column.id)
-
-      return {
-        accentColor: COLUMN_ACCENT_COLORS[columnIndex % COLUMN_ACCENT_COLORS.length],
-        id: isExisting ? column.id : createClientId('column'),
-        isExisting,
-        name: column.name,
-      }
-    })
-    const nextColumnIds = nextColumns.map((column) => column.id)
-    const fallbackColumnId = nextColumnIds[0]
-
-    nextColumns.forEach((column, columnIndex) => {
-      if (!column.isExisting) {
-        dispatch(
-          columnCreated({
-            boardId: editingBoardId,
-            column: {
-              accentColor: column.accentColor,
-              id: column.id,
-              name: column.name,
-            },
-            index: columnIndex,
-          }),
-        )
-        return
-      }
-
-      dispatch(
-        columnUpdated({
-          changes: {
-            accentColor: column.accentColor,
-            name: column.name,
-          },
-          columnId: column.id,
-        }),
-      )
-    })
-
-    boardToEdit.columns
-      .map((column) => column.id)
-      .filter((columnId) => !normalizedColumns.some((column) => column.id === columnId))
-      .forEach((columnId) => {
-        dispatch(
-          columnRemoved({
-            boardId: editingBoardId,
-            columnId,
-            targetColumnId: fallbackColumnId,
-          }),
-        )
-      })
-
-    dispatch(boardColumnsReordered({ boardId: editingBoardId, columnIds: nextColumnIds }))
-    dispatch(boardUpdated({ boardId: editingBoardId, changes: { name: normalizedBoardName } }))
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-  }
-
   // Adds a new blank subtask row in Edit Task form.
   function handleEditTaskSubtaskAdd() {
     setEditTaskSubtasks((previousSubtasks) => [...previousSubtasks, createEmptySubtaskItem()])
@@ -1205,62 +665,6 @@ function BoardView() {
   // Selects status in Edit Task modal and collapses the dropdown menu.
   function handleEditTaskStatusSelect(nextStatusValue: string) {
     setEditTaskStatusValue(nextStatusValue)
-    setIsEditStatusMenuOpen(false)
-  }
-
-  // Saves the edited task and moves it to the selected status column bottom.
-  function handleSaveTaskChanges() {
-    if (!activeBoard || !editingTaskId) {
-      return
-    }
-
-    const normalizedTitle = editTaskTitle.trim()
-    const normalizedStatus = editTaskStatusValue.trim()
-    const normalizedSubtasks = editTaskSubtasks
-      .map((subtask) => ({
-        ...subtask,
-        value: subtask.value.trim(),
-      }))
-      .filter((subtask) => subtask.value.length > 0)
-
-    if (normalizedTitle.length === 0 || normalizedStatus.length === 0 || normalizedSubtasks.length === 0) {
-      return
-    }
-
-    const targetColumn = activeBoard.columns.find((column) => column.name === normalizedStatus) ?? activeBoard.columns[0]
-
-    if (!targetColumn) {
-      return
-    }
-
-    const existingTask = activeBoard.columns.flatMap((column) => column.tasks).find((task) => task.id === editingTaskId)
-
-    if (!existingTask) {
-      return
-    }
-
-    if (existingTask.status !== targetColumn.name) {
-      dispatch(taskMoved({ destinationColumnId: targetColumn.id, taskId: editingTaskId }))
-    }
-
-    dispatch(
-      taskUpdated({
-        changes: {
-          description: editTaskDescription.trim(),
-          status: targetColumn.name,
-          subtasks: normalizedSubtasks.map((subtask, subtaskIndex) => ({
-            id: subtask.id || `${editingTaskId}-subtask-${subtaskIndex}`,
-            isCompleted: Boolean(subtask.checked),
-            title: subtask.value,
-          })),
-          title: normalizedTitle,
-        },
-        taskId: editingTaskId,
-      }),
-    )
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
     setIsEditStatusMenuOpen(false)
   }
 
