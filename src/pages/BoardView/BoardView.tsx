@@ -1,131 +1,32 @@
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import type { BoardPreview, BoardTaskPreview } from '../../data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
-import type { DropdownOption, ModalItem, SidebarMode } from '../../components'
+import type { ModalItem, SidebarMode } from '../../components'
 import { useBoardViewActions, useBoardViewOverlayState } from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectBoardPreviews, selectSidebarBoards } from '../../store/selectors'
 import { classNames } from '../../utils'
+import {
+  COLUMN_ACCENT_COLORS,
+  FALLBACK_BOARD_NAME,
+  MOBILE_BREAKPOINT,
+  buildDeleteBoardDescription,
+  buildDeleteTaskDescription,
+  buildStatusOptions,
+  createClientId,
+  createEmptyBoardColumnItem,
+  createEmptySubtaskItem,
+  createInitialAddBoardColumns,
+  createInitialAddTaskSubtasks,
+  getActiveBoard,
+  getActiveTask,
+  hasDuplicateBoardName,
+  mapBoardColumnsToEditableItems,
+  mapTaskSubtasksToEditableItems,
+  mapTaskSubtasksToViewModalItems,
+} from './BoardView.utils'
 import styles from '../../App.module.css'
-
-const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
-const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
-const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
-const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
-const MOBILE_BREAKPOINT = 788
-const FALLBACK_BOARD_NAME = 'Platform Launch'
-
-let nextClientId = 0
-
-// Creates a stable local-only ID for new UI-created entities.
-function createClientId(prefix: string): string {
-  nextClientId += 1
-  return `${prefix}-${nextClientId}`
-}
-
-// Creates a blank subtask form row with placeholder text.
-function createEmptySubtaskItem(placeholder = 'e.g. New subtask'): ModalItem {
-  return {
-    id: createClientId('subtask'),
-    placeholder,
-    value: '',
-  }
-}
-
-// Creates a blank board-column form row with optional initial value.
-function createEmptyBoardColumnItem(value = ''): ModalItem {
-  return {
-    id: createClientId('board-column'),
-    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
-    value,
-  }
-}
-
-// Builds default Add Task subtask rows shown when the modal opens.
-function createInitialAddTaskSubtasks(): ModalItem[] {
-  return DEFAULT_ADD_SUBTASK_PLACEHOLDERS.map((placeholder) => createEmptySubtaskItem(placeholder))
-}
-
-// Builds default Add Board column rows shown when the modal opens.
-function createInitialAddBoardColumns(): ModalItem[] {
-  return DEFAULT_ADD_BOARD_COLUMN_VALUES.map((value) => createEmptyBoardColumnItem(value))
-}
-
-// Maps task subtasks into editable modal rows while preserving completion state.
-function mapTaskSubtasksToEditableItems(task: BoardTaskPreview): ModalItem[] {
-  return task.subtasks.map((subtask) => ({
-    checked: subtask.isCompleted,
-    id: subtask.id,
-    value: subtask.title,
-  }))
-}
-
-// Resolves the currently selected board and falls back to the first board when needed.
-function getActiveBoard(boards: BoardPreview[], boardId: string): BoardPreview | undefined {
-  return boards.find((board) => board.id === boardId) ?? boards[0]
-}
-
-// Resolves the selected task from the active board by task ID.
-function getActiveTask(board: BoardPreview | undefined, taskId: string | null): BoardTaskPreview | undefined {
-  if (!board || !taskId) {
-    return undefined
-  }
-
-  return board.columns.flatMap((column) => column.tasks).find((task) => task.id === taskId)
-}
-
-// Builds status dropdown options from the active board column names.
-function buildStatusOptions(board: BoardPreview | undefined): DropdownOption[] {
-  if (!board || board.columns.length === 0) {
-    return [
-      { label: 'Todo', value: 'Todo' },
-      { label: 'Doing', value: 'Doing' },
-      { label: 'Done', value: 'Done' },
-    ]
-  }
-
-  return board.columns.map((column) => ({
-    label: column.name,
-    value: column.name,
-  }))
-}
-
-// Maps task subtasks into the view-task modal checkbox item format.
-function mapTaskSubtasksToViewModalItems(task: BoardTaskPreview): ModalItem[] {
-  return task.subtasks.map((subtask) => ({
-    checked: subtask.isCompleted,
-    id: subtask.id,
-    value: subtask.title,
-  }))
-}
-
-// Maps board columns into editable modal rows.
-function mapBoardColumnsToEditableItems(board: BoardPreview): ModalItem[] {
-  return board.columns.map((column) => ({
-    id: column.id,
-    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
-    value: column.name,
-  }))
-}
-
-// Checks whether a board name already exists using a case-insensitive comparison.
-function hasDuplicateBoardName(boards: BoardPreview[], boardName: string, excludedBoardId?: string): boolean {
-  const normalizedBoardName = boardName.trim().toLowerCase()
-
-  return boards.some((board) => board.id !== excludedBoardId && board.name.trim().toLowerCase() === normalizedBoardName)
-}
-
-// Builds delete-board confirmation copy that includes the target board name.
-function buildDeleteBoardDescription(boardName: string): string {
-  return `Are you sure you want to delete the '${boardName}' board? This action will remove all columns and tasks and cannot be reversed.`
-}
-
-// Builds delete-task confirmation copy that includes the target task name.
-function buildDeleteTaskDescription(taskName: string): string {
-  return `Are you sure you want to delete the '${taskName}' task and its subtasks? This action cannot be reversed.`
-}
 
 // Renders the board view screen and syncs the active board with route params.
 function BoardView() {
