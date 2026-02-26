@@ -1,152 +1,98 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { boardPreviews } from '../../data'
-import type { BoardPreview, BoardTaskPreview } from '../../data'
 import { AddColumnCard, EmptyBoardState, Header, Modal, Sidebar, Tasks } from '../../components'
-import type { DropdownOption, ModalItem, SidebarBoard, SidebarMode } from '../../components'
 import { classNames } from '../../utils'
 import styles from '../../App.module.css'
+import type { BoardPreview, BoardTaskPreview, ModalItem, SidebarMode } from './BoardView.types'
+import {
+  buildDeleteBoardDescription,
+  buildDeleteTaskDescription,
+  buildSidebarBoards,
+  buildStatusOptions,
+  COLUMN_ACCENT_COLORS,
+  createClientId,
+  createEmptyBoardColumnItem,
+  createEmptySubtaskItem,
+  createInitialAddBoardColumns,
+  createInitialAddTaskSubtasks,
+  fallbackBoardPreviews,
+  fallbackBoards,
+  getActiveBoard,
+  getActiveTask,
+  hasDuplicateBoardName,
+  mapBoardColumnsToEditableItems,
+  mapTaskSubtasksToEditableItems,
+  mapTaskSubtasksToViewModalItems,
+  MOBILE_BREAKPOINT,
+} from './BoardView.utils'
 
-const fallbackBoards: SidebarBoard[] = [
-  { id: 'platform-launch', name: 'Platform Launch' },
-  { id: 'marketing-plan', name: 'Marketing Plan' },
-  { id: 'roadmap', name: 'Roadmap' },
-]
-
-const DEFAULT_ADD_SUBTASK_PLACEHOLDERS = ['e.g. Make coffee', 'e.g. Drink coffee & smile']
-const DEFAULT_ADD_BOARD_COLUMN_VALUES = ['Todo', 'Doing']
-const DEFAULT_BOARD_COLUMN_PLACEHOLDER = 'e.g. Todo'
-const COLUMN_ACCENT_COLORS = ['#49c4e5', '#8471f2', '#67e2ae']
-const MOBILE_BREAKPOINT = 788
-
-let nextClientId = 0
-
-// Creates a stable local-only ID for new UI-created entities.
-function createClientId(prefix: string): string {
-  nextClientId += 1
-  return `${prefix}-${nextClientId}`
+type BoardViewOverlayState = {
+  isAddBoardModalOpen: boolean
+  isAddColumnModalOpen: boolean
+  isAddStatusMenuOpen: boolean
+  isAddTaskModalOpen: boolean
+  isBoardMenuOpen: boolean
+  isDeleteBoardModalOpen: boolean
+  isDeleteTaskModalOpen: boolean
+  isEditBoardModalOpen: boolean
+  isEditStatusMenuOpen: boolean
+  isEditTaskModalOpen: boolean
+  isMobileBoardsMenuOpen: boolean
+  isTaskMenuOpen: boolean
+  isViewStatusMenuOpen: boolean
 }
 
-// Creates a blank subtask form row with placeholder text.
-function createEmptySubtaskItem(placeholder = 'e.g. New subtask'): ModalItem {
+type BoardViewOverlayKey = keyof BoardViewOverlayState
+type BoardViewOverlayUpdater = boolean | ((previousValue: boolean) => boolean)
+type BoardViewOverlayAction =
+  | { type: 'set'; key: BoardViewOverlayKey; value: BoardViewOverlayUpdater }
+  | { type: 'setMany'; values: Partial<BoardViewOverlayState> }
+  | { type: 'reset' }
+
+const initialBoardViewOverlayState: BoardViewOverlayState = {
+  isAddBoardModalOpen: false,
+  isAddColumnModalOpen: false,
+  isAddStatusMenuOpen: false,
+  isAddTaskModalOpen: false,
+  isBoardMenuOpen: false,
+  isDeleteBoardModalOpen: false,
+  isDeleteTaskModalOpen: false,
+  isEditBoardModalOpen: false,
+  isEditStatusMenuOpen: false,
+  isEditTaskModalOpen: false,
+  isMobileBoardsMenuOpen: false,
+  isTaskMenuOpen: false,
+  isViewStatusMenuOpen: false,
+}
+
+// Resolves a reducer overlay value whether it comes from a raw boolean or updater callback.
+function resolveOverlayValue(currentValue: boolean, nextValue: BoardViewOverlayUpdater): boolean {
+  if (typeof nextValue === 'function') {
+    return nextValue(currentValue)
+  }
+
+  return nextValue
+}
+
+// Centralizes all BoardView overlay/menu visibility updates in one reducer.
+function boardViewOverlayReducer(state: BoardViewOverlayState, action: BoardViewOverlayAction): BoardViewOverlayState {
+  if (action.type === 'reset') {
+    return initialBoardViewOverlayState
+  }
+
+  if (action.type === 'setMany') {
+    return {
+      ...state,
+      ...action.values,
+    }
+  }
+
   return {
-    id: createClientId('subtask'),
-    placeholder,
-    value: '',
+    ...state,
+    [action.key]: resolveOverlayValue(state[action.key], action.value),
   }
 }
-
-// Creates a blank board-column form row with optional initial value.
-function createEmptyBoardColumnItem(value = ''): ModalItem {
-  return {
-    id: createClientId('board-column'),
-    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
-    value,
-  }
-}
-
-// Builds default Add Task subtask rows shown when the modal opens.
-function createInitialAddTaskSubtasks(): ModalItem[] {
-  return DEFAULT_ADD_SUBTASK_PLACEHOLDERS.map((placeholder) => createEmptySubtaskItem(placeholder))
-}
-
-// Builds default Add Board column rows shown when the modal opens.
-function createInitialAddBoardColumns(): ModalItem[] {
-  return DEFAULT_ADD_BOARD_COLUMN_VALUES.map((value) => createEmptyBoardColumnItem(value))
-}
-
-// Maps task subtasks into editable modal rows while preserving completion state.
-function mapTaskSubtasksToEditableItems(task: BoardTaskPreview): ModalItem[] {
-  return task.subtasks.map((subtask) => ({
-    checked: subtask.isCompleted,
-    id: subtask.id,
-    value: subtask.title,
-  }))
-}
-
-// Builds fallback board previews so the app shell still renders when data is unavailable.
-function buildFallbackBoardPreviews(boards: SidebarBoard[]): BoardPreview[] {
-  return boards.map((board) => ({
-    columns: [],
-    id: board.id,
-    name: board.name,
-  }))
-}
-
-// Maps board previews into sidebar entries used by the Sidebar component.
-function buildSidebarBoards(boards: BoardPreview[]): SidebarBoard[] {
-  return boards.map((board) => ({
-    id: board.id,
-    name: board.name,
-  }))
-}
-
-// Resolves the currently selected board and falls back to the first board when needed.
-function getActiveBoard(boards: BoardPreview[], boardId: string): BoardPreview | undefined {
-  return boards.find((board) => board.id === boardId) ?? boards[0]
-}
-
-// Resolves the selected task from the active board by task ID.
-function getActiveTask(board: BoardPreview | undefined, taskId: string | null): BoardTaskPreview | undefined {
-  if (!board || !taskId) {
-    return undefined
-  }
-
-  return board.columns.flatMap((column) => column.tasks).find((task) => task.id === taskId)
-}
-
-// Builds status dropdown options from the active board column names.
-function buildStatusOptions(board: BoardPreview | undefined): DropdownOption[] {
-  if (!board || board.columns.length === 0) {
-    return [
-      { label: 'Todo', value: 'Todo' },
-      { label: 'Doing', value: 'Doing' },
-      { label: 'Done', value: 'Done' },
-    ]
-  }
-
-  return board.columns.map((column) => ({
-    label: column.name,
-    value: column.name,
-  }))
-}
-
-// Maps task subtasks into the view-task modal checkbox item format.
-function mapTaskSubtasksToViewModalItems(task: BoardTaskPreview): ModalItem[] {
-  return task.subtasks.map((subtask) => ({
-    checked: subtask.isCompleted,
-    id: subtask.id,
-    value: subtask.title,
-  }))
-}
-
-// Maps board columns into editable modal rows.
-function mapBoardColumnsToEditableItems(board: BoardPreview): ModalItem[] {
-  return board.columns.map((column) => ({
-    id: column.id,
-    placeholder: DEFAULT_BOARD_COLUMN_PLACEHOLDER,
-    value: column.name,
-  }))
-}
-
-// Checks whether a board name already exists using a case-insensitive comparison.
-function hasDuplicateBoardName(boards: BoardPreview[], boardName: string, excludedBoardId?: string): boolean {
-  const normalizedBoardName = boardName.trim().toLowerCase()
-
-  return boards.some((board) => board.id !== excludedBoardId && board.name.trim().toLowerCase() === normalizedBoardName)
-}
-
-// Builds delete-board confirmation copy that includes the target board name.
-function buildDeleteBoardDescription(boardName: string): string {
-  return `Are you sure you want to delete the '${boardName}' board? This action will remove all columns and tasks and cannot be reversed.`
-}
-
-// Builds delete-task confirmation copy that includes the target task name.
-function buildDeleteTaskDescription(taskName: string): string {
-  return `Are you sure you want to delete the '${taskName}' task and its subtasks? This action cannot be reversed.`
-}
-
-const fallbackBoardPreviews = buildFallbackBoardPreviews(fallbackBoards)
 
 // Renders the board view screen and syncs the active board with route params.
 function BoardView() {
@@ -159,50 +105,89 @@ function BoardView() {
   const boards = buildSidebarBoards(boardsData)
   const activeBoardId = boardId ?? boards[0]?.id ?? fallbackBoards[0].id
 
-  const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
-  const [isViewStatusMenuOpen, setIsViewStatusMenuOpen] = useState(false)
+  const [overlayState, dispatchOverlay] = useReducer(boardViewOverlayReducer, initialBoardViewOverlayState)
+  const {
+    isAddBoardModalOpen,
+    isAddColumnModalOpen,
+    isAddStatusMenuOpen,
+    isAddTaskModalOpen,
+    isBoardMenuOpen,
+    isDeleteBoardModalOpen,
+    isDeleteTaskModalOpen,
+    isEditBoardModalOpen,
+    isEditStatusMenuOpen,
+    isEditTaskModalOpen,
+    isMobileBoardsMenuOpen,
+    isTaskMenuOpen,
+    isViewStatusMenuOpen,
+  } = overlayState
+
+  // Updates a single overlay/menu visibility value using a useState-compatible setter signature.
+  function setOverlayValue(key: BoardViewOverlayKey, value: BoardViewOverlayUpdater) {
+    dispatchOverlay({ key, type: 'set', value })
+  }
+
+  // Updates multiple overlay/menu visibility values in one reducer dispatch.
+  function setOverlayValues(values: Partial<BoardViewOverlayState>) {
+    dispatchOverlay({ type: 'setMany', values })
+  }
+
+  // Resets all overlay/menu visibility values to their closed state.
+  function resetOverlayVisibility() {
+    dispatchOverlay({ type: 'reset' })
+  }
+
+  // Creates a typed visibility setter for a specific overlay/menu key.
+  function createOverlaySetter(key: BoardViewOverlayKey) {
+    return (value: BoardViewOverlayUpdater) => {
+      setOverlayValue(key, value)
+    }
+  }
+
+  const setIsTaskMenuOpen = createOverlaySetter('isTaskMenuOpen')
+  const setIsViewStatusMenuOpen = createOverlaySetter('isViewStatusMenuOpen')
+  const setIsAddTaskModalOpen = createOverlaySetter('isAddTaskModalOpen')
+  const setIsAddStatusMenuOpen = createOverlaySetter('isAddStatusMenuOpen')
+  const setIsEditTaskModalOpen = createOverlaySetter('isEditTaskModalOpen')
+  const setIsEditStatusMenuOpen = createOverlaySetter('isEditStatusMenuOpen')
+  const setIsAddBoardModalOpen = createOverlaySetter('isAddBoardModalOpen')
+  const setIsAddColumnModalOpen = createOverlaySetter('isAddColumnModalOpen')
+  const setIsBoardMenuOpen = createOverlaySetter('isBoardMenuOpen')
+  const setIsMobileBoardsMenuOpen = createOverlaySetter('isMobileBoardsMenuOpen')
+  const setIsEditBoardModalOpen = createOverlaySetter('isEditBoardModalOpen')
+  const setIsDeleteBoardModalOpen = createOverlaySetter('isDeleteBoardModalOpen')
+  const setIsDeleteTaskModalOpen = createOverlaySetter('isDeleteTaskModalOpen')
+
   const [viewStatusValue, setViewStatusValue] = useState('')
   const [viewSubtasks, setViewSubtasks] = useState<ModalItem[]>([])
 
-  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false)
-  const [isAddStatusMenuOpen, setIsAddStatusMenuOpen] = useState(false)
   const [addTaskTitle, setAddTaskTitle] = useState('')
   const [addTaskDescription, setAddTaskDescription] = useState('')
   const [addTaskStatusValue, setAddTaskStatusValue] = useState('')
   const [addTaskSubtasks, setAddTaskSubtasks] = useState<ModalItem[]>(createInitialAddTaskSubtasks)
   const [addTaskSubtasksError, setAddTaskSubtasksError] = useState('')
 
-  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-  const [isEditStatusMenuOpen, setIsEditStatusMenuOpen] = useState(false)
   const [editTaskTitle, setEditTaskTitle] = useState('')
   const [editTaskDescription, setEditTaskDescription] = useState('')
   const [editTaskStatusValue, setEditTaskStatusValue] = useState('')
   const [editTaskSubtasks, setEditTaskSubtasks] = useState<ModalItem[]>([])
 
-  const [isAddBoardModalOpen, setIsAddBoardModalOpen] = useState(false)
   const [addBoardName, setAddBoardName] = useState('')
   const [addBoardNameError, setAddBoardNameError] = useState('')
   const [addBoardColumns, setAddBoardColumns] = useState<ModalItem[]>(createInitialAddBoardColumns)
-  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
   const [addColumnName, setAddColumnName] = useState('')
   const [addColumnNameError, setAddColumnNameError] = useState('')
 
-  const [isBoardMenuOpen, setIsBoardMenuOpen] = useState(false)
-  const [isMobileBoardsMenuOpen, setIsMobileBoardsMenuOpen] = useState(false)
-
-  const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false)
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
   const [editBoardName, setEditBoardName] = useState('')
   const [editBoardNameError, setEditBoardNameError] = useState('')
   const [editBoardColumns, setEditBoardColumns] = useState<ModalItem[]>([])
   const [editBoardColumnsError, setEditBoardColumnsError] = useState('')
 
-  const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false)
   const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null)
   const [deletingBoardName, setDeletingBoardName] = useState('')
 
-  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false)
   const [deletingTaskBoardId, setDeletingTaskBoardId] = useState<string | null>(null)
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
   const [deletingTaskName, setDeletingTaskName] = useState('')
@@ -243,8 +228,13 @@ function BoardView() {
   // Syncs task modal state with nested task route params and redirects unknown tasks.
   useEffect(() => {
     if (!taskId) {
-      setIsTaskMenuOpen(false)
-      setIsViewStatusMenuOpen(false)
+      dispatchOverlay({
+        type: 'setMany',
+        values: {
+          isTaskMenuOpen: false,
+          isViewStatusMenuOpen: false,
+        },
+      })
       return
     }
 
@@ -261,8 +251,13 @@ function BoardView() {
 
     setViewStatusValue(nextTask.status)
     setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
+    dispatchOverlay({
+      type: 'setMany',
+      values: {
+        isTaskMenuOpen: false,
+        isViewStatusMenuOpen: false,
+      },
+    })
   }, [activeBoard, activeBoardId, navigate, taskId])
 
   // Tracks the mobile breakpoint so the app can switch between desktop sidebar and mobile header layouts.
@@ -284,14 +279,25 @@ function BoardView() {
   // Closes the mobile boards popover when switching to tablet/desktop layouts.
   useEffect(() => {
     if (!isMobileViewport) {
-      setIsMobileBoardsMenuOpen(false)
+      dispatchOverlay({
+        key: 'isMobileBoardsMenuOpen',
+        type: 'set',
+        value: false,
+      })
     }
   }, [isMobileViewport])
 
   // Closes both header menus so only one top-level menu is visible at a time.
   function closeHeaderMenus() {
-    setIsBoardMenuOpen(false)
-    setIsMobileBoardsMenuOpen(false)
+    setOverlayValues({
+      isBoardMenuOpen: false,
+      isMobileBoardsMenuOpen: false,
+    })
+  }
+
+  // Closes every menu and modal overlay in the BoardView surface.
+  function closeAllOverlays() {
+    resetOverlayVisibility()
   }
 
   // Navigates to the current board route while clearing any nested task segment.
@@ -351,35 +357,25 @@ function BoardView() {
     setDeletingTaskName('')
   }
 
+  // Resets transient BoardView interaction state used across overlay transitions.
+  function resetTransientBoardInteractionState() {
+    setEditingTaskId(null)
+    setAddBoardNameError('')
+    resetAddColumnForm()
+    resetEditBoardForm()
+    resetDeleteBoardState()
+    resetDeleteTaskState()
+  }
+
   // Handles sidebar board changes and closes all open task modals and menus.
   function handleBoardSelect(nextBoardId: string) {
     const nextBoard = getActiveBoard(boardsData, nextBoardId)
     const nextStatusOptions = buildStatusOptions(nextBoard)
 
     navigate(`/board/${nextBoardId}`)
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
+    closeAllOverlays()
     setAddTaskStatusValue(nextStatusOptions[0]?.value ?? '')
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
+    resetTransientBoardInteractionState()
   }
 
   // Opens the view-task modal using the clicked task and local interactive state.
@@ -390,31 +386,11 @@ function BoardView() {
       return
     }
 
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
     navigate(`/board/${activeBoardId}/task/${nextTask.id}`)
-    setIsTaskMenuOpen(false)
     setViewStatusValue(nextTask.status)
     setViewSubtasks(mapTaskSubtasksToViewModalItems(nextTask))
-    setIsViewStatusMenuOpen(false)
   }
 
   // Opens Add Task modal with a clean form and closes other task overlays.
@@ -424,26 +400,8 @@ function BoardView() {
     }
 
     navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
     setIsAddTaskModalOpen(true)
     resetAddTaskForm(statusOptions[0]?.value ?? '')
   }
@@ -451,26 +409,8 @@ function BoardView() {
   // Opens Add Board modal with a clean form and closes other task overlays.
   function handleAddBoardOpen() {
     navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    closeHeaderMenus()
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
     setIsAddBoardModalOpen(true)
     resetAddBoardForm()
   }
@@ -482,20 +422,8 @@ function BoardView() {
     }
 
     navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    closeHeaderMenus()
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
     setIsAddColumnModalOpen(true)
     resetAddColumnForm()
   }
@@ -559,12 +487,8 @@ function BoardView() {
       return
     }
 
-    closeHeaderMenus()
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-    resetDeleteTaskState()
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
     setIsDeleteBoardModalOpen(true)
     setDeletingBoardId(activeBoard.id)
     setDeletingBoardName(activeBoard.name)
@@ -577,22 +501,10 @@ function BoardView() {
     }
 
     navigateToBoardRoute()
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-
-    setIsEditTaskModalOpen(false)
+    closeAllOverlays()
     setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-
-    setIsAddBoardModalOpen(false)
     setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
     resetAddColumnForm()
-
-    closeHeaderMenus()
     resetDeleteBoardState()
     resetDeleteTaskState()
 
@@ -619,22 +531,8 @@ function BoardView() {
       navigate('/', { replace: true })
     }
 
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsAddTaskModalOpen(false)
-    setIsAddStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
-    setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-    setIsAddColumnModalOpen(false)
-    resetAddColumnForm()
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
-    closeHeaderMenus()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
+    closeAllOverlays()
+    resetTransientBoardInteractionState()
   }
 
   // Closes the Edit Board modal and clears its local form state.
@@ -670,27 +568,19 @@ function BoardView() {
 
     const editableSubtasks = mapTaskSubtasksToEditableItems(activeTask)
 
+    closeAllOverlays()
+    navigateToBoardRoute()
+    setAddBoardNameError('')
+    resetEditBoardForm()
+    resetDeleteBoardState()
+    resetDeleteTaskState()
+
     setEditingTaskId(activeTask.id)
     setEditTaskTitle(activeTask.title)
     setEditTaskDescription(activeTask.description)
     setEditTaskStatusValue(activeTask.status)
     setEditTaskSubtasks(editableSubtasks.length > 0 ? editableSubtasks : [createEmptySubtaskItem('e.g. Make coffee')])
-    setIsEditStatusMenuOpen(false)
     setIsEditTaskModalOpen(true)
-
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    navigateToBoardRoute()
-
-    closeHeaderMenus()
-    resetDeleteBoardState()
-    resetDeleteTaskState()
-
-    setIsAddBoardModalOpen(false)
-    setAddBoardNameError('')
-
-    setIsEditBoardModalOpen(false)
-    resetEditBoardForm()
   }
 
   // Opens the Delete Task modal from the view-task action menu.
@@ -700,13 +590,9 @@ function BoardView() {
       return
     }
 
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
+    closeAllOverlays()
     navigateToBoardRoute()
-    setIsEditTaskModalOpen(false)
     setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
-    closeHeaderMenus()
     resetDeleteBoardState()
 
     setDeletingTaskBoardId(activeBoard.id)
@@ -742,11 +628,8 @@ function BoardView() {
       }),
     )
 
-    setIsTaskMenuOpen(false)
-    setIsViewStatusMenuOpen(false)
-    setIsEditTaskModalOpen(false)
+    closeAllOverlays()
     setEditingTaskId(null)
-    setIsEditStatusMenuOpen(false)
     navigate(`/board/${deletingTaskBoardId}`, { replace: true })
     resetDeleteTaskState()
   }
