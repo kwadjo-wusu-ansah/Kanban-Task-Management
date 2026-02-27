@@ -10,7 +10,7 @@ import {
   useBoardViewOverlayState,
   useBoardViewRouteState,
   useBoardViewUiHandlers,
-  useHydrateKanbanData 
+  useHydrateKanbanData,
 } from '../../hooks'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { selectBoardPreviews, selectSidebarBoards, selectApiHydrationError } from '../../store/selectors'
@@ -39,8 +39,10 @@ function BoardView() {
 
   const { boardId, taskId } = useParams()
   const dispatch = useAppDispatch()
+  const { apiHydrationStatus, requestHydration } = useHydrateKanbanData()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const boards = useAppSelector(selectSidebarBoards)
+  const apiHydrationError = useAppSelector(selectApiHydrationError)
   const navigate = useNavigate()
   
   const [mode, setMode] = useState<SidebarMode>('light')
@@ -189,6 +191,8 @@ function BoardView() {
       },
     }),
   )
+  const hasBoardHydrationError = apiHydrationStatus === 'failed' && boardPreviews.length === 0
+  const isLoadingInitialBoardData = apiHydrationStatus === 'loading' && boardPreviews.length === 0
 
   // Resets local Add Task form state to initial values for the active board.
   function resetAddTaskForm(initialStatusValue = statusOptions[0]?.value ?? '') {
@@ -475,7 +479,31 @@ function BoardView() {
           sidebarVisible={isHeaderSidebarVisible}
         />
         <section className={classNames(styles.boardCanvas, mode === 'dark' ? styles.boardCanvasDark : styles.boardCanvasLight)}>
-          {hasColumns ? (
+          {isLoadingInitialBoardData || hasBoardHydrationError ? (
+            <section
+              aria-live={hasBoardHydrationError ? 'assertive' : 'polite'}
+              className={classNames(
+                styles.boardAsyncState,
+                mode === 'dark' ? styles.boardAsyncStateDark : styles.boardAsyncStateLight,
+                hasBoardHydrationError ? styles.boardAsyncErrorState : undefined,
+              )}
+              role={hasBoardHydrationError ? 'alert' : undefined}
+            >
+              <h2 className={styles.boardAsyncTitle}>
+                {hasBoardHydrationError ? 'We could not load board data.' : 'Loading board data...'}
+              </h2>
+              <p className={styles.boardAsyncDescription}>
+                {hasBoardHydrationError
+                  ? apiHydrationError ?? 'Please check your connection and try again.'
+                  : 'Fetching the latest boards and tasks.'}
+              </p>
+              {hasBoardHydrationError ? (
+                <button className={styles.boardAsyncRetryButton} onClick={requestHydration} type="button">
+                  Retry loading boards
+                </button>
+              ) : null}
+            </section>
+          ) : hasColumns ? (
             <DndContext collisionDetection={closestCenter} onDragEnd={handleTaskDragEnd} sensors={dragSensors}>
               <div className={styles.columnsScroller}>
                 {activeBoard?.columns.map((column, columnIndex) => (
