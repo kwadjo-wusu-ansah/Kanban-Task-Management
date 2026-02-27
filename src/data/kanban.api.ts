@@ -6,7 +6,7 @@ Slow response: http://localhost:5173/api/kanban?delayMs=3000
 Forced failure: http://localhost:5173/api/kanban?fail=true
 */
 
-const DEFAULT_KANBAN_API_PATH = 'api/kanban'
+const DEFAULT_KANBAN_API_PATH = '/api/kanban'
 const MAX_SIMULATED_DELAY_MS = 15000
 
 // Validates that a subtask payload contains the required string/boolean fields.
@@ -71,11 +71,10 @@ function getKanbanApiUrl(): string {
   const configuredUrl = import.meta.env.VITE_KANBAN_API_URL
 
   if (typeof configuredUrl === 'string' && configuredUrl.trim().length > 0) {
-    return configuredUrl
+    return configuredUrl.trim()
   }
 
-  const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
-  return `${baseUrl}${DEFAULT_KANBAN_API_PATH}`
+  return DEFAULT_KANBAN_API_PATH
 }
 
 // Resolves optional simulated API delay from env for slow-network UX testing.
@@ -116,7 +115,13 @@ export async function fetchKanbanDataset(): Promise<KanbanDataset> {
     throw new Error(`Unable to load Kanban data (${response.status}).`)
   }
 
-  const dataset = (await response.json()) as unknown
+  let dataset: unknown
+
+  try {
+    dataset = (await response.json()) as unknown
+  } catch {
+    throw new Error('Unable to parse Kanban data. The API response must be valid JSON.')
+  }
 
   if (!isKanbanDataset(dataset)) {
     throw new Error('Received an invalid Kanban dataset payload.')
