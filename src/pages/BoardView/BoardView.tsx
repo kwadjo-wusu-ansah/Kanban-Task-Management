@@ -35,11 +35,13 @@ import styles from '../../App.module.css'
 
 // Renders the board view screen and syncs the active board with route params.
 function BoardView() {
+
   const { boardId, taskId } = useParams()
   const dispatch = useAppDispatch()
   const boardPreviews = useAppSelector(selectBoardPreviews)
   const boards = useAppSelector(selectSidebarBoards)
   const navigate = useNavigate()
+  
   const [mode, setMode] = useState<SidebarMode>('light')
   const [isSidebarHidden, setIsSidebarHidden] = useState(false)
 
