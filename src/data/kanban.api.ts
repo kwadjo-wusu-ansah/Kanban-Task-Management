@@ -7,6 +7,7 @@ Forced failure: http://localhost:5173/api/kanban?fail=true
 */
 
 const DEFAULT_KANBAN_API_PATH = '/api/kanban'
+const DEFAULT_KANBAN_STATIC_JSON_PATH = 'api/kanban.json'
 const MAX_SIMULATED_DELAY_MS = 15000
 
 // Validates that a subtask payload contains the required string/boolean fields.
@@ -66,6 +67,14 @@ function isKanbanDataset(value: unknown): value is KanbanDataset {
   return Array.isArray(candidate.boards) && candidate.boards.every((board) => isDatasetBoard(board))
 }
 
+// Joins a Vite base URL and relative path into a fetchable app-scoped URL.
+function joinBaseUrlWithPath(baseUrl: string, path: string): string {
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path
+
+  return `${normalizedBaseUrl}${normalizedPath}`
+}
+
 // Resolves the configured API URL or falls back to the local mock endpoint.
 function getKanbanApiUrl(): string {
   const configuredUrl = import.meta.env.VITE_KANBAN_API_URL
@@ -74,7 +83,11 @@ function getKanbanApiUrl(): string {
     return configuredUrl.trim()
   }
 
-  return DEFAULT_KANBAN_API_PATH
+  if (import.meta.env.DEV) {
+    return DEFAULT_KANBAN_API_PATH
+  }
+
+  return joinBaseUrlWithPath(import.meta.env.BASE_URL, DEFAULT_KANBAN_STATIC_JSON_PATH)
 }
 
 // Resolves optional simulated API delay from env for slow-network UX testing.
