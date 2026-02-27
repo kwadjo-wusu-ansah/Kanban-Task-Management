@@ -99,6 +99,6 @@ function createKanbanMockApiPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/Kanbon-Task-Management/",
+  base: '/Kanban-Task-Management/',
   plugins: [react(), createKanbanMockApiPlugin()],
 })

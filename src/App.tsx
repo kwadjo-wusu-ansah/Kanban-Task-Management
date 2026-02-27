@@ -6,14 +6,18 @@ import { ProtectedRoute } from './routes'
 function App() {
   return (
     <Routes>
+      
       <Route element={<Dashboard />} path="/" />
       <Route element={<Login />} path="/login" />
+
       <Route element={<ProtectedRoute />}>
         <Route element={<BoardView />} path="/board/:boardId/task/:taskId" />
         <Route element={<BoardView />} path="/board/:boardId" />
         <Route element={<Admin />} path="/admin" />
       </Route>
+      
       <Route element={<NotFound />} path="*" />
+
     </Routes>
   )
 }

@@ -37,16 +37,11 @@ function isPersistedStoreState(value: unknown): value is PersistedStoreState {
 
   return Boolean(
     kanban &&
-      Array.isArray(kanban.boardIds) &&
-      typeof kanban.boards === 'object' &&
-      kanban.boards !== null &&
-      Array.isArray(kanban.columnIds) &&
-      typeof kanban.columns === 'object' &&
-      kanban.columns !== null &&
-      Array.isArray(kanban.taskIds) &&
-      typeof kanban.tasks === 'object' &&
-      kanban.tasks !== null &&
-      typeof kanban.ui === 'object' &&
+      Array.isArray(kanban.boardIds) && typeof kanban.boards === 'object' &&
+      kanban.boards !== null && Array.isArray(kanban.columnIds) &&
+      typeof kanban.columns === 'object' && kanban.columns !== null &&
+      Array.isArray(kanban.taskIds) && typeof kanban.tasks === 'object' &&
+      kanban.tasks !== null && typeof kanban.ui === 'object' &&
       kanban.ui !== null,
   )
 }
