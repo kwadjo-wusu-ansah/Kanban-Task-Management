@@ -142,7 +142,7 @@ function cloneSubtasks(subtasks: KanbanSubtaskEntity[] | undefined): KanbanSubta
   }))
 }
 
-// Deduplicates IDs while preserving the first-seen ordering.
+// Deduplicates IDs while preserving the first-seen ordering. remove this
 function dedupeIds(values: string[]): string[] {
   const seenValues = new Set<string>()
 
@@ -154,6 +154,16 @@ function dedupeIds(values: string[]): string[] {
     seenValues.add(value)
     return true
   })
+}
+
+
+// Removes an ID from a list when present.
+function removeFromList(values: string[], value: string): void {
+  const valueIndex = values.indexOf(value)
+
+  if (valueIndex !== -1) {
+    values.splice(valueIndex, 1)
+  }
 }
 
 // Inserts an ID into a list at an optional index, defaulting to append.
@@ -168,14 +178,7 @@ function insertAtPosition(values: string[], value: string, index?: number): void
   values.splice(index, 0, value)
 }
 
-// Removes an ID from a list when present.
-function removeFromList(values: string[], value: string): void {
-  const valueIndex = values.indexOf(value)
 
-  if (valueIndex !== -1) {
-    values.splice(valueIndex, 1)
-  }
-}
 
 // Finds a safe target column for moved tasks when deleting a column.
 function getFallbackColumnId(board: KanbanBoardEntity, removedColumnId: string, preferredColumnId?: string): string | undefined {

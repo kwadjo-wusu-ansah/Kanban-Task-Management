@@ -37,22 +37,18 @@ function isPersistedStoreState(value: unknown): value is PersistedStoreState {
 
   return Boolean(
     kanban &&
-      Array.isArray(kanban.boardIds) &&
-      typeof kanban.boards === 'object' &&
-      kanban.boards !== null &&
-      Array.isArray(kanban.columnIds) &&
-      typeof kanban.columns === 'object' &&
-      kanban.columns !== null &&
-      Array.isArray(kanban.taskIds) &&
-      typeof kanban.tasks === 'object' &&
-      kanban.tasks !== null &&
-      typeof kanban.ui === 'object' &&
+      Array.isArray(kanban.boardIds) && typeof kanban.boards === 'object' &&
+      kanban.boards !== null && Array.isArray(kanban.columnIds) &&
+      typeof kanban.columns === 'object' && kanban.columns !== null &&
+      Array.isArray(kanban.taskIds) && typeof kanban.tasks === 'object' &&
+      kanban.tasks !== null && typeof kanban.ui === 'object' &&
       kanban.ui !== null,
   )
 }
 
 // Sanitizes persisted Kanban state to remove stale references and duplicate IDs.
 function sanitizeKanbanState(state: KanbanState): KanbanState {
+  
   const sourceBoardIds = Array.isArray(state.boardIds) ? state.boardIds : []
   const sourceBoards = typeof state.boards === 'object' && state.boards !== null ? state.boards : {}
   const sourceColumns = typeof state.columns === 'object' && state.columns !== null ? state.columns : {}
